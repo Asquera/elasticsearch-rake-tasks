@@ -84,8 +84,8 @@ namespace :es do
   desc "Seed the elasticsearch cluster with the data dump"
   task :seed do
     ensure_elasticsearch_configuration_present!
-    raise "need seed data in resources/dumps/elasticsearch.json" unless File.exist?("resources/dump/elasticsearch.json")
-    `curl -XPOST #{@es_server}/#{@es_index} --data-binary resources/dump/elasticsearch.json`
+    raise "need seed data in resources/dumps/elasticsearch.json" unless File.exist?("resources/dumps/elasticsearch.json")
+    `curl -XPOST #{@es_server}/#{@es_index}/_bulk --data-binary @resources/dumps/elasticsearch.json`
   end
 
   desc "Dump the elasticsearch index to the seed file"
