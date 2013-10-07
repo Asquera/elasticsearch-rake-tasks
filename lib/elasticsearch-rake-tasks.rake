@@ -1,5 +1,12 @@
 require "json"
 
+BASE_PATH = "resources/elasticsearch/"
+TEMPLATES_PATH = "#{BASE_PATH}templates/"
+SEED_PATH = "#{BASE_PATH}dumps/"
+
+@es_server = "http://localhost:9200/"
+@es_index = "default"
+
 def ensure_elasticsearch_configuration_present!
   raise "ES_SERVER not set!" unless @es_server
   raise "ES_INDEX not set!" unless @es_index
@@ -30,7 +37,7 @@ end
 
 
 def read_settings(mapping)
-  filename = "resources/elasticsearch-templates/#{mapping}/settings.yaml"
+  filename = "#{TEMPLATES_PATH}#{mapping}/settings.yaml"
   if File.exist?(filename)
     read_and_parse_file(filename)
   else
@@ -41,7 +48,7 @@ end
 def read_mappings(mapping)
   mappings = {}
 
-  Dir.chdir("resources/elasticsearch-templates/#{mapping}/mappings/") do
+  Dir.chdir("#{TEMPLATES_PATH}#{mapping}/mappings/") do
     paths = Dir['*.{json,yml,yaml}']
     if default_file = paths.find { |f| f =~ /_default\.*/ }
       default = read_and_parse_file default_file
@@ -62,7 +69,7 @@ end
 # see http://www.elasticsearch.org/guide/reference/api/admin-indices-templates/
 # for usage and format of the template pattern
 def read_template_pattern(mapping)
-  filename = "resources/elasticsearch-templates/#{mapping}/template_pattern"
+  filename = "#{TEMPLATES_PATH}#{mapping}/template_pattern"
   if File.exist?(filename)
     File.read(filename).chomp
   else
@@ -84,8 +91,8 @@ namespace :es do
   desc "Seed the elasticsearch cluster with the data dump"
   task :seed do
     ensure_elasticsearch_configuration_present!
-    raise "need seed data in resources/dumps/elasticsearch.json" unless File.exist?("resources/dumps/elasticsearch.json")
-    `curl -XPOST #{@es_server}/#{@es_index}/_bulk --data-binary @resources/dumps/elasticsearch.json`
+    raise "need seed data in #{SEED_PATH}seed.json" unless File.exist?("#{SEED_PATH}seed.json")
+    `curl -XPOST #{@es_server}/#{@es_index}/_bulk --data-binary @#{SEED_PATH}seed.json`
   end
 
   desc "Dump the elasticsearch index to the seed file"
@@ -97,7 +104,7 @@ namespace :es do
     c = Eson::HTTP::Client.new(:server => @es_server, :default_parameters => {:index => @es_index})
     # this is a workaround for a current bug that disallows passing auto_call directly to #bulk
     bulk_client = Eson::HTTP::Client.new(:auto_call => false)
-    File.open('resources/dumps/elasticsearch.json', "w") do |f|
+    File.open("#{SEED_PATH}seed.json", "w") do |f|
       c.all(:index => @es_index) do |chunk|
         if chunk.size > 0
           b = bulk_client.bulk do |b|
@@ -114,7 +121,7 @@ namespace :es do
     end
   end
 
-  Dir["resources/elasticsearch-templates/*"].each do |folder|
+  Dir["#{TEMPLATES_PATH}*"].each do |folder|
     name = folder.split("/").last
     namespace name do
       desc "compile the #{name} template and prints it to STDOUT"
