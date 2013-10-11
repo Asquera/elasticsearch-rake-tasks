@@ -1,4 +1,5 @@
 require "json"
+require "helpers"
 
 BASE_PATH = "resources/elasticsearch/"
 TEMPLATES_PATH = "#{BASE_PATH}templates/"
@@ -12,93 +13,18 @@ def ensure_elasticsearch_configuration_present!
   raise "ES_INDEX not set!" unless @es_index
 end
 
-def read_and_parse_json_file(file)
-  JSON.parse File.read file
-rescue Exception => e
-  puts "error while reading file #{file}"
-  raise e
-end
-
-def read_and_parse_yaml_file(file)
-  YAML.load File.read file
-rescue Exception => e
-  puts "error while reading file #{file}"
-  raise e
-end
-
-def read_and_parse_file(file)
-  case File.extname(file)
-  when ".json"
-    read_and_parse_json_file(file)
-  when ".yaml", ".yml"
-    read_and_parse_yaml_file(file)
-  end
-end
-
-
-def read_settings(mapping)
-  filename = "#{TEMPLATES_PATH}#{mapping}/settings.yaml"
-  if File.exist?(filename)
-    read_and_parse_file(filename)
-  else
-    {}
-  end
-end
-
-def read_mappings(mapping)
-  mappings = {}
-
-  Dir.chdir("#{TEMPLATES_PATH}#{mapping}/mappings/") do
-    paths = Dir['*.{json,yml,yaml}']
-    if default_file = paths.find { |f| f =~ /_default\.*/ }
-      default = read_and_parse_file default_file
-      paths.delete default_file
-    end
-    
-    paths.each do |p|
-      name, _ = p.split(".")
-      content = read_and_parse_file p
-      mappings[name] = default.deep_merge(content)
-    end
-  end
-
-  mappings
-end
-
-# reads the template pattern from the file
-# see http://www.elasticsearch.org/guide/reference/api/admin-indices-templates/
-# for usage and format of the template pattern
-def read_template_pattern(mapping)
-  filename = "#{TEMPLATES_PATH}#{mapping}/template_pattern"
-  if File.exist?(filename)
-    File.read(filename).chomp
-  else
-    nil
-  end
-end
-
-def compile_template(name)
-  require 'active_support/core_ext/hash/deep_merge'
-  mappings = read_mappings(name)
-  settings = read_settings(name)
-  template_pattern = read_template_pattern(name)
-  output = { "settings" => settings, "mappings" => mappings }
-  output['template'] = template_pattern if template_pattern
-  JSON.dump output
-end
-
 namespace :es do
   desc "Seed the elasticsearch cluster with the data dump"
   task :seed do
     ensure_elasticsearch_configuration_present!
     raise "need seed data in #{SEED_PATH}seed.json" unless File.exist?("#{SEED_PATH}seed.json")
-    `curl -XPOST #{@es_server}/#{@es_index}/_bulk --data-binary @#{SEED_PATH}seed.json`
+    curl_request("POST", "#{@es_server}/#{@es_index}/_bulk", "--data-binary @#{SEED_PATH}seed.json")
   end
 
   desc "Dump the elasticsearch index to the seed file"
   task :dump do
-    require 'eson-http'
-    require 'eson-more'
+    require "eson-http"
+    require "eson-more"
     ensure_elasticsearch_configuration_present!
 
     c = Eson::HTTP::Client.new(:server => @es_server, :default_parameters => {:index => @es_index})
@@ -126,14 +52,16 @@ namespace :es do
     namespace name do
       desc "compile the #{name} template and prints it to STDOUT"
       task :compile do
-        puts compile_template(name)
+        reader = Reader.new
+        puts reader.compile_template(name)
       end
 
       desc "resets the given index, replacing the mapping with a current one"
       task :reset do
         ensure_elasticsearch_configuration_present!
-        `curl -XDELETE #{@es_server}/#{@es_index}`
-        `curl -XPOST #{@es_server}/#{@es_index} -d '#{compile_template(name)}'`
+        url = "#{@es_server}/#{@es_index}"
+        curl_request("DELETE", url)
+        curl_request("POST", url, "-d #{compile_template(name)}")
       end
     end
   end
