@@ -19,18 +19,6 @@ def validate_elasticsearch_configuration!(server, index)
 end
 
 namespace :es do
-  desc "Dump elasticsearch index from one into another"
-  task :reindex, :server, :index, :to_index do |t, args|
-    ensure_elasticsearch_configuration_present!
-
-    server = args[:server]
-    index = args[:index]
-    to_index = args[:to_index]
-
-    c = Eson::HTTP::Client.new(:server => server, :default_parameters => {:index => index})
-    c.reindex(index, to_index)
-  end
-
   desc "Seed the elasticsearch cluster with the data dump"
   task :seed, :server, :index do |t, args|
     server = args[:server]
@@ -72,6 +60,20 @@ namespace :es do
     end
   end
 
+  desc "Dump elasticsearch index from one into another"
+  task :reindex, :server, :index, :to_index do |t, args|
+    require "eson-http"
+    require "eson-more"
+    server = args[:server]
+    index = args[:index]
+    to_index = args[:to_index]
+
+    validate_elasticsearch_configuration!(server, index)
+
+    c = Eson::HTTP::Client.new(:server => server, :default_parameters => {:index => index})
+    c.reindex(index, to_index)
+  end
+
   Dir["#{TEMPLATES_PATH}*"].each do |folder|
     name = folder.split("/").last
     namespace name do
@@ -85,8 +87,8 @@ namespace :es do
       task :reset do
         ensure_elasticsearch_configuration_present!
         url = "#{@es_server}/#{@es_index}"
-        curl_request("DELETE", url)
-        curl_request("POST", url, "-d #{compile_template(name)}")
+        Elasticsearch::Helpers.curl_request("DELETE", url)
+        Elasticsearch::Helpers.curl_request("POST", url, "-d #{Elasticsearch::Helpers.compile_template(name)}")
       end
     end
   end
