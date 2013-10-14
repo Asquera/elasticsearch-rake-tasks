@@ -31,10 +31,14 @@ namespace :es do
     end
   end
   desc "Seed the elasticsearch cluster with the data dump"
-  task :seed do
-    ensure_elasticsearch_configuration_present!
+  task :seed, :server, :index do |t, args|
+    server = args[:server]
+    index = args[:index]
+
+    validate_elasticsearch_configuration!(server, index)
+
     raise "need seed data in #{SEED_PATH}seed.json" unless File.exist?("#{SEED_PATH}seed.json")
-    curl_request("POST", "#{@es_server}/#{@es_index}/_bulk", "--data-binary @#{SEED_PATH}seed.json")
+    Elasticsearch::Helpers.curl_request("POST", "#{server}/#{index}/_bulk", "--data-binary @#{SEED_PATH}seed.json")
   end
 
   desc "Dump the elasticsearch index to the seed file"

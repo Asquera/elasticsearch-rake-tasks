@@ -1,6 +1,6 @@
 module Elasticsearch
   module Helpers 
-    def curl_request(method, url, parameters = nil)
+    def Helpers.curl_request(method, url, parameters = nil)
       method.upcase!
       if parameters == nil
         `curl -X#{method} #{url}`
