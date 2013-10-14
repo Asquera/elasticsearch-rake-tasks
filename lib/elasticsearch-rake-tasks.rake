@@ -20,16 +20,17 @@ end
 
 namespace :es do
   desc "Dump elasticsearch index from one into another"
-  task :copy_index do
+  task :reindex, :server, :index, :to_index do |t, args|
     ensure_elasticsearch_configuration_present!
-    Rake::Task["dump"].execute
 
-    c = Eson::HTTP::Client.new(:server => @server, :default_parameters => {:index => @es_index})
-    bulk_client = Eson::HTTP::Client.new(:auto_call => false)
-    File.open("#{SEED_PATH}seed.json", "r") do |f|
-      
-    end
+    server = args[:server]
+    index = args[:index]
+    to_index = args[:to_index]
+
+    c = Eson::HTTP::Client.new(:server => server, :default_parameters => {:index => index})
+    c.reindex(index, to_index)
   end
+
   desc "Seed the elasticsearch cluster with the data dump"
   task :seed, :server, :index do |t, args|
     server = args[:server]
