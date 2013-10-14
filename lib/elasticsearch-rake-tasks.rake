@@ -13,6 +13,11 @@ def ensure_elasticsearch_configuration_present!
   raise "ES_INDEX not set!" unless @es_index
 end
 
+def validate_elasticsearch_configuration!(server, index)
+  raise "ES_SERVER not set!" unless server
+  raise "ES_INDEX not set!" unless index
+end
+
 namespace :es do
   desc "Dump elasticsearch index from one into another"
   task :copy_index do
@@ -33,16 +38,20 @@ namespace :es do
   end
 
   desc "Dump the elasticsearch index to the seed file"
-  task :dump do
+  task :dump, :server, :index do |t, args|
     require "eson-http"
     require "eson-more"
-    ensure_elasticsearch_configuration_present!
 
-    c = Eson::HTTP::Client.new(:server => @es_server, :default_parameters => {:index => @es_index})
+    server = args[:server]
+    index = args[:index]
+
+    validate_elasticsearch_configuration!(server, index)
+
+    c = Eson::HTTP::Client.new(:server => server, :default_parameters => {:index => index})
     # this is a workaround for a current bug that disallows passing auto_call directly to #bulk
     bulk_client = Eson::HTTP::Client.new(:auto_call => false)
     File.open("#{SEED_PATH}seed.json", "w") do |f|
-      c.all(:index => @es_index) do |chunk|
+      c.all(:index => index) do |chunk|
         if chunk.size > 0
           b = bulk_client.bulk do |b|
             chunk.each do |doc|
