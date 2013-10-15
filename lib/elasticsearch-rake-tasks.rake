@@ -1,5 +1,5 @@
 require "json"
-require "helpers"
+require "elasticsearch/helpers"
 
 BASE_PATH = "resources/elasticsearch/"
 TEMPLATES_PATH = "#{BASE_PATH}templates/"
