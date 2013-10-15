@@ -1,5 +1,5 @@
 require "json"
-require "elasticsearch/helpers"
+require "elasticsearch-rake-tasks"
 
 BASE_PATH = "resources/elasticsearch/"
 TEMPLATES_PATH = "#{BASE_PATH}templates/"
@@ -27,7 +27,10 @@ namespace :es do
     validate_elasticsearch_configuration!(server, index)
 
     raise "need seed data in #{SEED_PATH}seed.json" unless File.exist?("#{SEED_PATH}seed.json")
-    Elasticsearch::Helpers.curl_request("POST", "#{server}/#{index}/_bulk", "--data-binary @#{SEED_PATH}seed.json")
+    sender = Elasticsearch::Helpers::ChunkedSender.new("#{server}/#{index}/_bulk")
+    File.open("#{SEED_PATH}seed.json", "rb") do |io|
+      sender.send io
+    end
   end
 
   desc "Dump the elasticsearch index to the seed file"
