@@ -79,7 +79,7 @@ namespace :es do
     namespace name do
       desc "compile the #{name} template and prints it to STDOUT"
       task :compile do
-        reader = Reader.new
+        reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
         puts reader.compile_template(name)
       end
 
