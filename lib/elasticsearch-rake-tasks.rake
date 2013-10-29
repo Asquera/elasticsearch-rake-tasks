@@ -86,12 +86,14 @@ namespace :es do
         puts reader.compile_template(name)
       end
 
-      desc "resets the given index, replacing the mapping with a current one"
+      desc "delete the given template and recreate it"
       task :reset do
         ensure_elasticsearch_configuration_present!
-        url = "#{@es_server}/#{@es_index}"
+        reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
+
+        url = "#{@es_server}/_template/#{name}"
         Elasticsearch::Helpers.curl_request("DELETE", url)
-        Elasticsearch::Helpers.curl_request("POST", url, "-d #{Elasticsearch::Helpers.compile_template(name)}")
+        Elasticsearch::Helpers.curl_request("PUT", url, "-d #{Shellwords.escape(reader.compile_template(name))}")
       end
     end
   end
