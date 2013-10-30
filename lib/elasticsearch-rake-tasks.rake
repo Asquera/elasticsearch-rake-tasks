@@ -5,9 +5,6 @@ BASE_PATH = "resources/elasticsearch/"
 TEMPLATES_PATH = "#{BASE_PATH}templates/"
 SEED_PATH = "#{BASE_PATH}dumps/"
 
-@es_server = "http://localhost:9200/"
-@es_index = "default"
-
 def ensure_elasticsearch_configuration_present!
   raise "ES_SERVER not set!" unless @es_server
   raise "ES_INDEX not set!" unless @es_index
