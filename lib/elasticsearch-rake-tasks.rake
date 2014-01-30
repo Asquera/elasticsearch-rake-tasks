@@ -82,20 +82,19 @@ namespace :es do
   Dir["#{TEMPLATES_PATH}*"].each do |folder|
     name = folder.split("/").last
     namespace name do
-      desc "compile the #{name} template and prints it to STDOUT"
+      desc "Compile the #{name} template and prints it to STDOUT"
       task :compile do
         reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
         puts reader.compile_template(name)
       end
 
-      desc "delete the given template and recreate it"
-      task :reset, :server, :index do |t, args|
-        args.with_defaults(:server => @es_server, :index => @es_index)
+      desc "Deletes the #{name} template and recreates it"
+      task :reset, :server do |t, args|
+        args.with_defaults(:server => @es_server)
 
         server = args[:server]
-        index  = args[:index]
 
-        ensure_elasticsearch_configuration_present!(server, index)
+        ensure_elasticsearch_configuration_present!(server, true)
         reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
 
         url = "#{server}/_template/#{name}"
