@@ -5,10 +5,9 @@ BASE_PATH = "resources/elasticsearch/"
 TEMPLATES_PATH = "#{BASE_PATH}templates/"
 SEED_PATH = "#{BASE_PATH}dumps/"
 
-def ensure_elasticsearch_configuration_present!
-  raise "ES_SERVER not set!" unless @es_server
-  raise "ES_INDEX not set!" unless @es_index
-end
+# set variables from environment variables if available
+@es_server = ENV['ES_SERVER']
+@es_index  = ENV['ES_INDEX']
 
 def validate_elasticsearch_configuration!(server, index)
   raise "ES_SERVER not set!" unless server
@@ -18,6 +17,8 @@ end
 namespace :es do
   desc "Seed the elasticsearch cluster with the data dump"
   task :seed, :server, :index do |t, args|
+    args.with_defaults(:server => @es_server, :index => @es_index)
+
     server = args[:server]
     index = args[:index]
 
@@ -32,6 +33,8 @@ namespace :es do
 
   desc "Dump the elasticsearch index to the seed file"
   task :dump, :server, :index do |t, args|
+    args.with_defaults(:server => @es_server, :index => @es_index)
+
     require "eson-http"
     require "eson-more"
 
@@ -62,16 +65,18 @@ namespace :es do
 
   desc "Dump elasticsearch index from one into another"
   task :reindex, :server, :index, :to_index do |t, args|
+    args.with_defaults(:server => @es_server, :index => @es_index)
+
     require "eson-http"
     require "eson-more"
     server = args[:server]
-    index = args[:index]
+    index  = args[:index]
     to_index = args[:to_index]
 
     validate_elasticsearch_configuration!(server, index)
 
-    c = Eson::HTTP::Client.new(:server => server, :default_parameters => {:index => index})
-    c.reindex(index, to_index)
+    client = Eson::HTTP::Client.new(:server => server, :default_parameters => {:index => index})
+    client.reindex(index, to_index)
   end
 
   Dir["#{TEMPLATES_PATH}*"].each do |folder|
@@ -84,11 +89,16 @@ namespace :es do
       end
 
       desc "delete the given template and recreate it"
-      task :reset do
-        ensure_elasticsearch_configuration_present!
+      task :reset, :server, :index do |t, args|
+        args.with_defaults(:server => @es_server, :index => @es_index)
+
+        server = args[:server]
+        index  = args[:index]
+
+        ensure_elasticsearch_configuration_present!(server, index)
         reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
 
-        url = "#{@es_server}/_template/#{name}"
+        url = "#{server}/_template/#{name}"
         Elasticsearch::Helpers.curl_request("DELETE", url)
         Elasticsearch::Helpers.curl_request("PUT", url, "-d #{Shellwords.escape(reader.compile_template(name))}")
       end
