@@ -43,6 +43,8 @@ namespace :es do
 
     validate_elasticsearch_configuration!(server, index)
 
+    FileUtils.mkdir_p(SEED_PATH)
+
     c = Eson::HTTP::Client.new(:server => server, :default_parameters => {:index => index})
     # this is a workaround for a current bug that disallows passing auto_call directly to #bulk
     bulk_client = Eson::HTTP::Client.new(:auto_call => false)
