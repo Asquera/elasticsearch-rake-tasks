@@ -94,7 +94,7 @@ namespace :es do
 
         server = args[:server]
 
-        ensure_elasticsearch_configuration_present!(server, true)
+        validate_elasticsearch_configuration!(server, true)
         reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
 
         url = "#{server}/_template/#{name}"
