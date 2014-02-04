@@ -101,6 +101,21 @@ namespace :es do
         Elasticsearch::Helpers.curl_request("DELETE", url)
         Elasticsearch::Helpers.curl_request("PUT", url, "-d #{Shellwords.escape(reader.compile_template(name))}")
       end
+
+      desc "Create new index with mappings and settings"
+      task :create, :server, :index do |t, args|
+        args.with_defaults(:server => @es_server)
+
+        server = args[:server]
+        index  = args[:index]
+
+        validate_elasticsearch_configuration!(server, index)
+        reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
+
+        url = "#{server}/#{index}"
+        Elasticsearch::Helpers.curl_request("PUT", url)
+        Elasticsearch::Helpers.curl_request("PUT", url, "-d #{Shellwords.escape(reader.compile_template(name))}")
+      end
     end
   end
 end
