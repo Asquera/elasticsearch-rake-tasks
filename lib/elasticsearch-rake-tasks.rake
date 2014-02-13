@@ -14,17 +14,12 @@ def validate_elasticsearch_configuration!(server, index)
   raise "ES_INDEX not set!" unless index
 end
 
-def alias_payload(alias_name, indices, new_index)
-  removals = indices.map{ |k,v| { "remove" => { "alias" => alias_name, "index" => k } } }
-  result = {}
-  result['actions'] = []
-  result['actions'] << removals unless removals.empty?
-  result['actions'] << { "add" => { "alias" => alias_name, "index" => new_index } }
-  result
-end
-
-def find_indices_with_alias(aliases, name)
-  aliases.select{ |k,v| v['aliases'] && v['aliases'][name] }
+def update_alias(client, name, new_index)
+  indices = client.get_aliases.select{ |k,v| v['aliases'] && v['aliases'][name] }
+  client.aliases do |req|
+    indices.each{ |k,v| req.remove k, name }
+    req.add new_index, name
+  end
 end
 
 namespace :es do
@@ -115,7 +110,7 @@ namespace :es do
         Elasticsearch::Helpers.curl_request("PUT", url, "-d #{Shellwords.escape(reader.compile_template(name))}")
       end
 
-      desc "Creates new index with the template"
+      desc "Creates new index with the template #{name}"
       task :create, :server, :index do |t, args|
         args.with_defaults(:server => @es_server)
 
@@ -132,25 +127,18 @@ namespace :es do
       end
 
       desc "Sets an alias to a specific index"
-      task :alias, :server, :new_index do |t, args|
+      task :alias, :server, :index do |t, args|
         args.with_defaults(:server => @es_server)
 
         require "eson-http"
         require "eson-more"
-        server    = args[:server]
-        new_index = args[:new_index]
+        server = args[:server]
+        index  = args[:index]
 
-        validate_elasticsearch_configuration!(server, true)
+        validate_elasticsearch_configuration!(server, index)
 
         client = Eson::HTTP::Client.new(:server => server)
-        aliases = client.get_aliases
-
-        indices = find_indices_with_alias(aliases, name)
-        payload = alias_payload(name, indices, new_index)
-        puts "#{payload.to_s}"
-
-        url = "#{server}/_aliases"
-        Elasticsearch::Helpers.curl_request("POST", url, "-d #{Shellwords.escape(payload)}")
+        update_alias(client, name, index)
       end
     end
   end
