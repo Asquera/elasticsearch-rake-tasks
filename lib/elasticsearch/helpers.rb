@@ -51,10 +51,10 @@ module Elasticsearch
         Dir.chdir("#{@templates_path}#{mapping}/mappings/") do
           paths = Dir['*.{json,yml,yaml}']
           if default_file = paths.find { |f| f =~ /_default\.*/ }
-            default = read_and_parse_file default_file
+            default = read_and_parse_file(default_file) || {}
             paths.delete default_file
           end
-          
+
           paths.each do |p|
             name, _ = p.split(".")
             content = read_and_parse_file p
