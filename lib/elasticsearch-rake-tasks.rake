@@ -14,6 +14,14 @@ def validate_elasticsearch_configuration!(server, index)
   raise "ES_INDEX not set!" unless index
 end
 
+def update_alias(client, name, new_index)
+  indices = client.get_aliases.select{ |k,v| v['aliases'] && v['aliases'][name] }
+  client.aliases do |req|
+    indices.each{ |k,v| req.remove k, name }
+    req.add new_index, name
+  end
+end
+
 namespace :es do
   desc "Seed the elasticsearch cluster with the data dump"
   task :seed, :server, :index do |t, args|
@@ -103,7 +111,37 @@ namespace :es do
         Elasticsearch::Helpers.curl_request("DELETE", url)
         Elasticsearch::Helpers.curl_request("PUT", url, "-d #{Shellwords.escape(reader.compile_template(name))}")
       end
+
+      desc "Creates new index with the template #{name}"
+      task :create, :server, :index do |t, args|
+        args.with_defaults(:server => @es_server)
+
+        server = args[:server]
+        index  = args[:index]
+
+        validate_elasticsearch_configuration!(server, index)
+        reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
+
+        url = "#{server}/#{index}"
+        Elasticsearch::Helpers.curl_request("PUT", url)
+        url = "#{server}/_template/#{index}"
+        Elasticsearch::Helpers.curl_request("PUT", url, "-d #{Shellwords.escape(reader.compile_template(name))}")
+      end
+
+      desc "Sets an alias to a specific index"
+      task :alias, :server, :index do |t, args|
+        args.with_defaults(:server => @es_server)
+
+        require "eson-http"
+        require "eson-more"
+        server = args[:server]
+        index  = args[:index]
+
+        validate_elasticsearch_configuration!(server, index)
+
+        client = Eson::HTTP::Client.new(:server => server)
+        update_alias(client, name, index)
+      end
     end
   end
 end
-
