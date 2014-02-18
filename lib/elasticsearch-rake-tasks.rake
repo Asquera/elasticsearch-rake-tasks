@@ -142,6 +142,19 @@ namespace :es do
         client = Eson::HTTP::Client.new(:server => server)
         update_alias(client, name, index)
       end
+
+      desc "Updates the index to a new version with template #{name}"
+      task :flip, :server, :old_index, :new_index do |t,args|
+        args.with_defaults(:server => @es_server)
+
+        server    = args[:server]
+        old_index = args[:old_index]
+        new_index = args[:new_index]
+
+        Rake::Task["es:#{name}:create"].invoke(server, new_index)
+        Rake::Task["es:reindex"].invoke(server, old_index, new_index)
+        Rake::Task["es:#{name}:alias"].invoke(server, new_index)
+      end
     end
   end
 end
