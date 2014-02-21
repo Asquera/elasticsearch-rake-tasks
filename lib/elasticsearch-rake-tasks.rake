@@ -89,6 +89,17 @@ namespace :es do
     client.reindex(index, to_index)
   end
 
+  desc "Deletes a given index, NOTE use this task carefully!"
+  task :delete, :server, :index do |t, args|
+    server = args[:server]
+    index  = args[:index]
+
+    validate_elasticsearch_configuration!(server, index)
+
+    url = "#{server}/#{index}"
+    Elasticsearch::Helpers.curl_request('DELETE', url)
+  end
+
   Dir["#{TEMPLATES_PATH}*"].each do |folder|
     name = folder.split("/").last
     namespace name do
