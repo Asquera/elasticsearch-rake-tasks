@@ -60,7 +60,11 @@ module Elasticsearch
           paths.each do |p|
             name, _ = p.split(".")
             content = read_and_parse_file p
-            mappings[name] = default.deep_merge(content)
+            if content.fetch('inherit', true)
+              mappings[name] = default.deep_merge(content)
+            else
+              mappings[name] = content
+            end
           end
         end
 
