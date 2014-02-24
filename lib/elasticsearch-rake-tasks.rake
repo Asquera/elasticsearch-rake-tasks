@@ -133,9 +133,9 @@ namespace :es do
         validate_elasticsearch_configuration!(server, index)
         reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
 
-        url = "#{server}/#{index}"
+        url = "#{server}/#{index}/"
         Elasticsearch::Helpers.curl_request("PUT", url)
-        url = "#{server}/_template/#{index}"
+        url = "#{server}/_template/#{index}/"
         Elasticsearch::Helpers.curl_request("PUT", url, "-d #{Shellwords.escape(reader.compile_template(name))}")
       end
 
