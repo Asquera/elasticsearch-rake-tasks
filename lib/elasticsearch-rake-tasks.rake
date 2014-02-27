@@ -100,6 +100,17 @@ namespace :es do
     Elasticsearch::Helpers.curl_request('DELETE', url)
   end
 
+  desc "Deletes a given template, NOTE use with care"
+  task :delete_template, :server, :template do |t, args|
+    server   = args[:server]
+    template = args[:template]
+
+    validate_elasticsearch_configuration!(server, true)
+
+    url = "#{server}/_template/#{template}"
+    Elasticsearch::Helpers.curl_request("DELETE", url)
+  end
+
   Dir["#{TEMPLATES_PATH}*"].each do |folder|
     name = folder.split("/").last
     namespace name do
