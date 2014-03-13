@@ -1,0 +1,8 @@
+---
+index:
+  analysis:
+    analyzer:
+      foo_analyzer:
+        filter:
+          - standard
+          - lowercase
