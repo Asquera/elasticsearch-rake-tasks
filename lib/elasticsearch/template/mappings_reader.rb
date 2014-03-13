@@ -3,13 +3,13 @@ module Elasticsearch
     class MappingsReader
       attr_reader :path
 
-      def initialize(mappings_path)
-        @path = mappings_path
+      def initialize(template_path)
+        @path = template_path
       end
 
       def read
         mappings = {}
-        Dir.chdir(path) do
+        Dir.chdir("#{path}/mappings") do
           visible_types.each do |path|
             name, _ = path.split(".")
             content = parse_yaml_file(path)
@@ -23,7 +23,7 @@ module Elasticsearch
 
       def visible_types
         paths = Dir['*.{yml,yaml}']
-        paths.reject{ |path| File.basename(path).start_with?("_") }
+        paths.reject{ |p| File.basename(p).start_with?("_") }
       end
 
       def parse_yaml_file(file)

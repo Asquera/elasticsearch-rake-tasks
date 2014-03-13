@@ -28,22 +28,12 @@ describe Elasticsearch::Template::Compiler do
     end
   end
 
-  describe "template simple" do
+  describe "compiling simple template" do
     let(:template){ 'simple' }
-    subject{ Elasticsearch::Template::Compiler.new(root).read_mappings(template) }
+    subject{ Elasticsearch::Template::Compiler.new(root).compile(template) }
 
-    it { should be_a(Hash) }
-    it { should have(1).items }
-
-    it "contains a type named 'foo'" do
-      subject['foo'].should be_true
-    end
-
-    context "type 'foo'" do
-      it "contains a property 'title'" do
-        foo = subject['foo']
-        foo['properties']['title'].should_not be_nil
-      end
+    it "contains mappings entry" do
+      subject['mappings'].should_not be_nil
     end
   end
 end

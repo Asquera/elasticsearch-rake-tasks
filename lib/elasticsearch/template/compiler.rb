@@ -10,18 +10,14 @@ module Elasticsearch
       end
 
       def compile(template)
-        unless File.directory?("#{path}/#{template}")
-          raise "Template #{template} not a directory"
+        template_path = "#{path}/#{template}"
+        unless File.directory?(template_path)
+          raise "Template #{template_path} not a directory"
         end
-        mappings = read_mappings(template)
-        mappings
-      end
 
-      def read_mappings(template)
-        mappings_path = "#{path}/#{template}/mappings"
-        MappingsReader.new(mappings_path).read
-      rescue
-        {}
+        result = {}
+        result['mappings'] = MappingsReader.new(template_path).read
+        result
       end
     end
   end
