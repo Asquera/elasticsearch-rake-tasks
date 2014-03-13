@@ -15,7 +15,27 @@ module Elasticsearch
       end
 
       def read_mappings(template)
-        { 'foo' => 1 }
+        mappings = {}
+        Dir.chdir("#{path}/#{template}/mappings/") do
+          paths = Dir['*.{yml,yaml}']
+
+          visible_types(paths).each do |path|
+            name, _ = path.split(".")
+            content = parse_file(path)
+            mappings[name] = content
+          end
+        end
+        mappings
+      rescue
+        {}
+      end
+
+      def parse_file(path)
+        ""
+      end
+
+      def visible_types(paths)
+        paths.reject{ |path| File.basename(path).start_with?("_") }
       end
     end
   end
