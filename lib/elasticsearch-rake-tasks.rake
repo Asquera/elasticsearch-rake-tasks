@@ -27,6 +27,8 @@ namespace :es do
   task :seed, :server, :index do |t, args|
     args.with_defaults(:server => @es_server, :index => @es_index)
 
+    FileUtils.mkdir_p(SEED_PATH)
+
     seeder = Elasticsearch::Rake::Tasks::Seeder.new(
       :server => args[:server],
       :index  => args[:index]
@@ -38,34 +40,11 @@ namespace :es do
   task :dump, :server, :index do |t, args|
     args.with_defaults(:server => @es_server, :index => @es_index)
 
-    require "eson-http"
-    require "eson-more"
-
-    server = args[:server]
-    index = args[:index]
-
-    validate_elasticsearch_configuration!(server, index)
-
-    FileUtils.mkdir_p(SEED_PATH)
-
-    c = Eson::HTTP::Client.new(:server => server, :default_parameters => {:index => index})
-    # this is a workaround for a current bug that disallows passing auto_call directly to #bulk
-    bulk_client = Eson::HTTP::Client.new(:auto_call => false)
-    File.open("#{SEED_PATH}seed.json", "w") do |f|
-      c.all(:index => index) do |chunk|
-        if chunk.size > 0
-          b = bulk_client.bulk do |b|
-            chunk.each do |doc|
-              b.index :index => nil,
-                      :type => doc["_type"],
-                      :id => doc["_id"],
-                      :doc => doc["_source"]
-            end
-          end
-          f << b.source
-        end
-      end
-    end
+    index_dump = Elasticsearch::Rake::Tasks::IndexDump.new(
+      :server => args[:server],
+      :index  => args[:index],
+    )
+    index_dump.to_file("#{SEED_PATH}seed.json")
   end
 
   desc "Dump elasticsearch index from one into another"

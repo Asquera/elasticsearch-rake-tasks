@@ -4,6 +4,7 @@ require "elasticsearch/io/chunked_sender"
 
 require "elasticsearch/rake/tasks/version"
 require "elasticsearch/rake/tasks/seeder"
+require "elasticsearch/rake/tasks/index_dump"
 
 module Elasticsearch
   module Rake
