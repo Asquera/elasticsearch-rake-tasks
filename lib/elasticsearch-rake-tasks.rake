@@ -59,7 +59,7 @@ namespace :es do
 
     validate_elasticsearch_configuration!(server, index)
 
-    client = Eson::HTTP::Client.new(:server => server, :default_parameters => {:index => index})
+    client = Eson::HTTP::Client.new(:server => server).with(:index => index)
     client.reindex(index, to_index)
   end
 

@@ -19,16 +19,20 @@ module Elasticsearch
           File.open(seed_file, 'w') do |file|
             client.all(:index => index) do |chunk|
               unless chunk.empty?
-                b = bulk_client.bulk do |b|
-                  chunk.each do |doc|
-                    b.index :index => nil,
-                            :type  => doc["_type"],
-                            :id    => doc["_id"],
-                            :doc   => doc["_source"]
-                  end
-                end
-                file << b.source
+                bulk = index_chunk(bulk_client, chunk)
+                file << bulk.source
               end
+            end
+          end
+        end
+
+        def index_chunk(client, chunks)
+          client.bulk do |b|
+            chunks.each do |doc|
+              b.index :index => nil,
+                      :type  => doc["_type"],
+                      :id    => doc["_id"],
+                      :doc   => doc["_source"]
             end
           end
         end
