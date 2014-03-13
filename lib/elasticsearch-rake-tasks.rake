@@ -33,7 +33,9 @@ namespace :es do
     validate_elasticsearch_configuration!(server, index)
 
     raise "need seed data in #{SEED_PATH}seed.json" unless File.exist?("#{SEED_PATH}seed.json")
-    sender = Elasticsearch::Helpers::ChunkedSender.new("#{server}/#{index}/_bulk")
+
+    sink   = Elasticsearch::IO::BulkSink.new("#{server}/#{index}/_bulk")
+    sender = Elasticsearch::IO::ChunkedSender.new(sink)
     File.open("#{SEED_PATH}seed.json", "rb") do |io|
       sender.send io
     end

@@ -1,6 +1,6 @@
 module Elasticsearch
   module IO
-    class NewChunkedSender
+    class ChunkedSender
       attr_reader :sink
 
       def initialize(sink)
