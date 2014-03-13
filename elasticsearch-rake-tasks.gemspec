@@ -6,11 +6,11 @@ require 'elasticsearch/rake/tasks/version'
 Gem::Specification.new do |spec|
   spec.name          = "elasticsearch-rake-tasks"
   spec.version       = Elasticsearch::Rake::Tasks::VERSION
-  spec.authors       = ["TODO: Write your name"]
-  spec.email         = ["TODO: Write your email address"]
-  spec.description   = %q{TODO: Write a gem description}
-  spec.summary       = %q{TODO: Write a gem summary}
-  spec.homepage      = ""
+  spec.authors       = ["Florian Gilcher", "Felix Gilcher"]
+  spec.email         = ["florian.gilcher@asquera.de", "felix.gilcher@asquera.de"]
+  spec.description   = %q{Rake tasks for handling ElasticSearch}
+  spec.summary       = %q{Rake tasks for handling ElasticSearch}
+  spec.homepage      = "https://github.com/Asquera/elasticsearch-rake-tasks"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
