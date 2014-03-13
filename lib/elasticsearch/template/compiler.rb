@@ -14,33 +14,14 @@ module Elasticsearch
           raise "Template #{template} not a directory"
         end
         mappings = read_mappings(template)
+        mappings
       end
 
       def read_mappings(template)
-        mappings = {}
-        Dir.chdir("#{path}/#{template}/mappings/") do
-          paths = Dir['*.{yml,yaml}']
-
-          visible_types(paths).each do |path|
-            name, _ = path.split(".")
-            content = parse_yaml_file(path)
-            mappings[name] = content
-          end
-        end
-        mappings
+        mappings_path = "#{path}/#{template}/mappings"
+        MappingsReader.new(mappings_path).read
       rescue
         {}
-      end
-
-      def parse_yaml_file(file)
-        YAML.load(File.read(file))
-      rescue StandardError => e
-        STDOUT.puts "Error while reading file #{file}: #{e}"
-        raise e
-      end
-
-      def visible_types(paths)
-        paths.reject{ |path| File.basename(path).start_with?("_") }
       end
     end
   end
