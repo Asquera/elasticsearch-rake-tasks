@@ -1,3 +1,5 @@
+require 'active_support/core_ext/hash/deep_merge'
+
 module Elasticsearch
   module Template
     class MappingsReader
@@ -27,7 +29,11 @@ module Elasticsearch
       end
 
       def parse_yaml_file(file)
-        YAML.load(File.read(file))
+        content = YAML.load(File.read(file))
+        Array(content.delete('inherit_from')).each do |file|
+          content = parse_yaml_file(file).deep_merge(content)
+        end
+        content
       rescue StandardError => e
         STDOUT.puts "Error while reading file #{file}: #{e}"
         raise e

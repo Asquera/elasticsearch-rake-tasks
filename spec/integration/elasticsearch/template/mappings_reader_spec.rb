@@ -9,18 +9,45 @@ describe Elasticsearch::Template::MappingsReader do
     end
   end
 
-  describe "simple template" do
+  describe "reading simple template" do
     let(:path){ "#{examples_root}/#{template}" }
     subject{ Elasticsearch::Template::MappingsReader.new(path).read }
 
     it "contains a type named 'foo'" do
-      subject['foo'].should be_true
+      subject['foo'].should_not be_nil
+    end
+
+    it "contains a type named 'bar'" do
+      subject['bar'].should_not be_nil
     end
 
     context "type 'foo'" do
-      it "contains a property 'title'" do
-        foo = subject['foo']
-        foo['properties']['title'].should_not be_nil
+      it "matches hash" do
+        subject['foo'].should == {
+          'properties' => {
+            'title' => {
+              'type'     => 'string',
+              'analyzer' => 'foo_analyzer'
+            }
+          }
+        }
+      end
+    end
+
+    context "type 'bar' with inheritance" do
+      it "matches hash" do
+        subject['bar'].should == {
+          'properties' => {
+            'title' => {
+              'type'     => 'string',
+              'analyzer' => 'foo_analyzer'
+            },
+            'name' => {
+              'type'     => 'string',
+              'analyzer' => 'foo_analyzer'
+            }
+          }
+        }
       end
     end
   end

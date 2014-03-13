@@ -1,0 +1,6 @@
+---
+inherit_from: foo.yml
+properties:
+  name:
+    type: string
+    analyzer: foo_analyzer
