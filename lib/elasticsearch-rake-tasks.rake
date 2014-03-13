@@ -27,18 +27,11 @@ namespace :es do
   task :seed, :server, :index do |t, args|
     args.with_defaults(:server => @es_server, :index => @es_index)
 
-    server = args[:server]
-    index = args[:index]
-
-    validate_elasticsearch_configuration!(server, index)
-
-    raise "need seed data in #{SEED_PATH}seed.json" unless File.exist?("#{SEED_PATH}seed.json")
-
-    sink   = Elasticsearch::IO::BulkSink.new("#{server}/#{index}/_bulk")
-    sender = Elasticsearch::IO::ChunkedSender.new(sink)
-    File.open("#{SEED_PATH}seed.json", "rb") do |io|
-      sender.send io
-    end
+    seeder = Elasticsearch::Rake::Tasks::Seeder.new(
+      :server => args[:server],
+      :index  => args[:index]
+    )
+    seeder.upload("#{SEED_PATH}seed.json")
   end
 
   desc "Dump the elasticsearch index to the seed file"
