@@ -1,9 +1,9 @@
 require "json"
 require "elasticsearch-rake-tasks"
 
-BASE_PATH = "resources/elasticsearch/"
+BASE_PATH      = "resources/elasticsearch/"
 TEMPLATES_PATH = "#{BASE_PATH}templates/"
-SEED_PATH = "#{BASE_PATH}dumps/"
+SEED_PATH      = "#{BASE_PATH}dumps/"
 
 # set variables from environment variables if available
 @es_server = ENV['ES_SERVER']
