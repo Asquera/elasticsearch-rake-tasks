@@ -11,6 +11,11 @@ module Elasticsearch
         unless File.directory?("#{path}/#{template}")
           raise "Template #{template} not a directory"
         end
+        mappings = read_mappings(template)
+      end
+
+      def read_mappings(template)
+        { 'foo' => 1 }
       end
     end
   end
