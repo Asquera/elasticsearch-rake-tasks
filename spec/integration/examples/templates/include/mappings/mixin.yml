@@ -1,3 +1,5 @@
 ---
-include: bar.yml
-  surname: *string_analyzed
+properties:
+  inherit: !file "bar.yml"
+  surname:
+    type: string

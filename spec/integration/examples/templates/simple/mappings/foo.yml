@@ -1,5 +1,4 @@
 ---
-properties:
-  title:
-    type: string
-    analyzer: foo_analyzer
+title:
+  type: string
+  analyzer: foo_analyzer

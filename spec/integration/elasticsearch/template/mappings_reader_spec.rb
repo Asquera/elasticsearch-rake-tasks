@@ -24,11 +24,9 @@ describe Elasticsearch::Template::MappingsReader do
     context "type 'foo'" do
       it "matches hash" do
         subject['foo'].should == {
-          'properties' => {
-            'title' => {
-              'type'     => 'string',
-              'analyzer' => 'foo_analyzer'
-            }
+          'title' => {
+            'type'     => 'string',
+            'analyzer' => 'foo_analyzer'
           }
         }
       end
