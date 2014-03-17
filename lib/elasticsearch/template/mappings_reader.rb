@@ -30,7 +30,7 @@ module Elasticsearch
 
       def parse_yaml_file(file)
         content = YAML.load(File.read(file))
-        Array(content.delete('inherit_from')).each do |file|
+        Array(content.delete('include')).each do |file|
           content = parse_yaml_file(file).deep_merge(content)
         end
         content

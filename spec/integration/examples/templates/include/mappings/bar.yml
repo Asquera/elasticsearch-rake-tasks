@@ -1,0 +1,4 @@
+---
+properties:
+  name: &string_analyzed
+    type: string

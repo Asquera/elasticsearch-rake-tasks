@@ -1,5 +1,5 @@
 ---
-inherit_from: foo.yml
+include: foo.yml
 properties:
   name:
     type: string
