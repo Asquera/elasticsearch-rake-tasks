@@ -23,6 +23,9 @@ module Elasticsearch
 
       def replace_inherit_node(document)
         document.grep(Psych::Nodes::Mapping).each do |node|
+          pairs = find_include_nodes(node.children)
+          STDOUT.puts "PAIRS: #{pairs.inspect}"
+
           inherit   = node.children.find{ |n| n.respond_to?(:value) && n.value == NODE_NAME }
           file_node = node.children.find{ |n| n.respond_to?(:tag) && n.tag == TAG_NAME }
           if inherit && file_node
@@ -36,6 +39,18 @@ module Elasticsearch
               node.children.insert(index, c)
               index += 1
             end
+          end
+        end
+      end
+
+      private
+
+      def find_include_nodes(nodes)
+        includes = nodes.grep(Psych::Nodes::Scalar).select{ |n| n.value == NODE_NAME }
+        includes.each_with_object([]) do |item, result|
+          file = nodes.at(nodes.index(item) + 1)
+          if file.send(:tag) == TAG_NAME
+            result << [item, file]
           end
         end
       end
