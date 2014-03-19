@@ -115,7 +115,7 @@ describe Elasticsearch::Yaml::Parser do
 
     context "template with external alias" do
       let(:dir){ mapping_folder("include") }
-      let(:yaml){ "#{dir}/mixin.yml" }
+      let(:yaml){ "#{dir}/alias.yml" }
 
       it "does not raise error" do
         expect{ subject }.not_to raise_error

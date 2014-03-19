@@ -1,5 +1,4 @@
 ---
 properties:
   inherit: !file "bar.yml"
-  surname:
-    type: string
+  surname: *string_analyzed
