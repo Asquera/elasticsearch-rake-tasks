@@ -20,7 +20,7 @@ module Elasticsearch
         Dir.chdir("#{path}/mappings") do
           visible_types.each do |path|
             name, _ = path.split(".")
-            content = parser.parse_yaml_file(path).to_ruby
+            content = parser.load_file(path)
             mappings[name] = content
           end
         end

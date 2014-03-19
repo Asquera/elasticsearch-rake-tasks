@@ -1,12 +1,16 @@
 module Elasticsearch
   module Yaml
     class Parser
-      def parse_yaml_file(file)
+      def load_file(file)
+        parse_file(file).to_ruby
+      end
+
+      def parse_file(file)
         document = parse_yaml_content(File.read(file))
         replace_inherit_node(document)
         document
       rescue StandardError => e
-        STDOUT.puts "Error while reading file #{file}: #{e}"
+        # STDOUT.puts "Error while reading file #{file}: #{e}"
         raise e
       end
 
@@ -24,7 +28,7 @@ module Elasticsearch
             node.children.delete(inherit)
             node.children.delete(file_node)
 
-            content = parse_yaml_file(file_node.value)
+            content = parse_file(file_node.value)
             content.children.each do |c|
               node.children.insert(index, c)
               index += 1
