@@ -1,6 +1,9 @@
 module Elasticsearch
   module Yaml
     class Parser
+      NODE_NAME = 'inherit'
+      TAG_NAME  = '!file'
+
       def load_file(file)
         parse_file(file).to_ruby
       end
@@ -20,8 +23,8 @@ module Elasticsearch
 
       def replace_inherit_node(document)
         document.grep(Psych::Nodes::Mapping).each do |node|
-          inherit   = node.children.find{ |n| n.respond_to?(:value) && n.value == 'inherit' }
-          file_node = node.children.find{ |n| n.respond_to?(:tag) && n.tag == '!file' }
+          inherit   = node.children.find{ |n| n.respond_to?(:value) && n.value == NODE_NAME }
+          file_node = node.children.find{ |n| n.respond_to?(:tag) && n.tag == TAG_NAME }
           if inherit && file_node
             index = node.children.index(inherit)
 

@@ -9,22 +9,47 @@ describe Elasticsearch::Yaml::Parser do
 
   describe "#parse_yaml_content" do
     subject{ parser.parse_yaml_content(yaml) }
-    context "!file not uses as inheritance" do
+    context "without an inherit value" do
       let(:yaml){ "---\nfoo:\n  bar: !file \"test.yml\"" }
 
       it "does not load external file" do
+        Elasticsearch::Yaml::Parser.should_not_receive(:parse_file)
+        subject.to_ruby
+      end
+
+      it "parses correctly" do
         subject.to_ruby.should == {
           'foo' => { 'bar' => 'test.yml' }
         }
       end
     end
 
-    context "inheritance used without !file tag" do
+    context "without a !file tag" do
       let(:yaml){ "---\nfoo:\n  inherit: \"bar.yml\"" }
 
       it "does not load external file" do
+        Elasticsearch::Yaml::Parser.should_not_receive(:parse_file)
+        subject.to_ruby
+      end
+
+      it "parses correctly" do
         subject.to_ruby.should == {
           'foo' => { 'inherit' => 'bar.yml' }
+        }
+      end
+    end
+
+    context "with distant properties" do
+      let(:yaml){ "---\nfoo:\n  inherit:\n    foo: !file \"bar.yml\"" }
+
+      it "does not load external file" do
+        Elasticsearch::Yaml::Parser.should_not_receive(:parse_file)
+        subject.to_ruby
+      end
+
+      it "parses correctly" do
+        subject.to_ruby.should == {
+          'foo' => { 'inherit' => { 'foo' => 'bar.yml' } }
         }
       end
     end
