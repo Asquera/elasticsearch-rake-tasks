@@ -1,3 +1,5 @@
+require 'yaml'
+
 module Elasticsearch
   module Template
     class Compiler
@@ -21,7 +23,7 @@ module Elasticsearch
 
           visible_types(paths).each do |path|
             name, _ = path.split(".")
-            content = parse_file(path)
+            content = parse_yaml_file(path)
             mappings[name] = content
           end
         end
@@ -30,8 +32,11 @@ module Elasticsearch
         {}
       end
 
-      def parse_file(path)
-        ""
+      def parse_yaml_file(file)
+        YAML.load(File.read(file))
+      rescue StandardError => e
+        STDOUT.puts "Error while reading file #{file}: #{e}"
+        raise e
       end
 
       def visible_types(paths)

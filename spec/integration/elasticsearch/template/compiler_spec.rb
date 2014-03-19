@@ -38,5 +38,12 @@ describe Elasticsearch::Template::Compiler do
     it "contains a type named 'foo'" do
       subject['foo'].should be_true
     end
+
+    context "type 'foo'" do
+      it "contains a property 'title'" do
+        foo = subject['foo']
+        foo['properties']['title'].should_not be_nil
+      end
+    end
   end
 end
