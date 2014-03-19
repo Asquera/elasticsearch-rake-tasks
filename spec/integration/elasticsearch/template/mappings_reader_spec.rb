@@ -49,20 +49,4 @@ describe Elasticsearch::Template::MappingsReader do
       end
     end
   end
-
-  describe "reading include template" do
-    let(:path){ "#{examples_root}/include" }
-    subject{ Elasticsearch::Template::MappingsReader.new(path).read }
-
-    context "type 'mixin'" do
-      it "matches hash" do
-        subject['mixin'].should == {
-          'properties' => {
-            'name'    => { 'type' => 'string' },
-            'surname' => { 'type' => 'string' }
-          }
-        }
-      end
-    end
-  end
 end

@@ -3,12 +3,16 @@ require 'active_support/core_ext/hash/deep_merge'
 module Elasticsearch
   module Template
     class MappingsReader
+      def self.default_parser
+        Elasticsearch::Yaml::Parser.new
+      end
+
       attr_reader :path
       attr_reader :parser
 
-      def initialize(template_path)
+      def initialize(template_path, parser = nil)
         @path   = template_path
-        @parser = Elasticsearch::Yaml::Parser.new
+        @parser = parser || MappingsReader.default_parser
       end
 
       def read
