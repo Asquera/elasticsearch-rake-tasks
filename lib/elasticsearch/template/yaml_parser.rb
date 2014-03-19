@@ -26,7 +26,7 @@ module Elasticsearch
       def replace_inherit_node(document)
         document.grep(Psych::Nodes::Mapping).each do |node|
           nodes = node.children
-          find_include_nodes(nodes).reverse.each do |pair|
+          find_file_include_nodes(nodes).reverse.each do |pair|
             index = nodes.index(pair.item)
 
             nodes.delete_if{ |n| n == pair.item || n == pair.file }
@@ -50,13 +50,13 @@ module Elasticsearch
         next_node.tag == TAG_NAME
       end
 
-      def find_include_nodes(nodes)
-        nodes.map do |n|
-          next_node = nodes.at(nodes.index(n) + 1)
-          if insertion_node?(n, next_node)
-            [n, next_node]
+      def find_file_include_nodes(nodes)
+        nodes.each_index.each_with_object([]) do |index, result|
+          m, n = nodes.slice(index, 2)
+          if insertion_node?(m, n)
+            result << OpenStruct.new(item: m, file: n)
           end
-        end.compact.map { |x| OpenStruct.new(item: x[0], file: x[1]) }
+        end
       end
     end
   end
