@@ -1,3 +1,5 @@
+require 'ostruct'
+
 module Elasticsearch
   module Yaml
     class Parser
@@ -23,20 +25,15 @@ module Elasticsearch
 
       def replace_inherit_node(document)
         document.grep(Psych::Nodes::Mapping).each do |node|
-          pairs = find_include_nodes(node.children)
-          STDOUT.puts "PAIRS: #{pairs.inspect}"
+          nodes = node.children
+          find_include_nodes(nodes).reverse.each do |pair|
+            index = nodes.index(pair.item)
 
-          inherit   = node.children.find{ |n| n.respond_to?(:value) && n.value == NODE_NAME }
-          file_node = node.children.find{ |n| n.respond_to?(:tag) && n.tag == TAG_NAME }
-          if inherit && file_node
-            index = node.children.index(inherit)
+            nodes.delete_if{ |n| n == pair.item || n == pair.file }
 
-            node.children.delete(inherit)
-            node.children.delete(file_node)
-
-            content = parse_file(file_node.value)
+            content = parse_file(pair.file.value)
             content.children.each do |c|
-              node.children.insert(index, c)
+              nodes.insert(index, c)
               index += 1
             end
           end
@@ -45,14 +42,21 @@ module Elasticsearch
 
       private
 
+      def insertion_node?(n, next_node)
+        n.class == Psych::Nodes::Scalar &&
+        n.value == NODE_NAME &&
+        next_node &&
+        next_node.respond_to?(:tag) &&
+        next_node.tag == TAG_NAME
+      end
+
       def find_include_nodes(nodes)
-        includes = nodes.grep(Psych::Nodes::Scalar).select{ |n| n.value == NODE_NAME }
-        includes.each_with_object([]) do |item, result|
-          file = nodes.at(nodes.index(item) + 1)
-          if file.send(:tag) == TAG_NAME
-            result << [item, file]
+        nodes.map do |n|
+          next_node = nodes.at(nodes.index(n) + 1)
+          if insertion_node?(n, next_node)
+            [n, next_node]
           end
-        end
+        end.compact.map { |x| OpenStruct.new(item: x[0], file: x[1]) }
       end
     end
   end
