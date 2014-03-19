@@ -12,7 +12,7 @@ module Elasticsearch
 
       def parse_file(file)
         document = parse_yaml_content(File.read(file))
-        replace_inherit_node(document)
+        replace_file_include_nodes(document)
         document
       rescue StandardError => e
         # STDOUT.puts "Error while reading file #{file}: #{e}"
@@ -23,18 +23,19 @@ module Elasticsearch
         YAML.parse(content).root
       end
 
-      def replace_inherit_node(document)
-        document.grep(Psych::Nodes::Mapping).each do |node|
-          nodes = node.children
-          find_file_include_nodes(nodes).reverse.each do |pair|
-            index = nodes.index(pair.item)
+      def replace_file_include_nodes(document)
+        document.grep(Psych::Nodes::Mapping).each do |n|
+          n.children.tap do |nodes|
+            find_file_include_nodes(nodes).reverse.each do |node|
+              # remove the pair of Scalar nodes
+              nodes.delete(node.item)
+              nodes.delete(node.file)
 
-            nodes.delete_if{ |n| n == pair.item || n == pair.file }
-
-            content = parse_file(pair.file.value)
-            content.children.each do |c|
-              nodes.insert(index, c)
-              index += 1
+              # and replace it with the content from the external yaml
+              content = parse_file(node.file.value)
+              content.children.each_with_index do |item, index|
+                nodes.insert(node.index + index, item)
+              end
             end
           end
         end
@@ -54,7 +55,7 @@ module Elasticsearch
         nodes.each_index.each_with_object([]) do |index, result|
           m, n = nodes.slice(index, 2)
           if insertion_node?(m, n)
-            result << OpenStruct.new(item: m, file: n)
+            result << OpenStruct.new(item: m, file: n, index: index)
           end
         end
       end
