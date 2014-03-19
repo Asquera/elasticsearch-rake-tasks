@@ -1,6 +1,4 @@
 require "psych"
-require "pry"
-require "pry-debugger"
 
 module Elasticsearch
   module Template
