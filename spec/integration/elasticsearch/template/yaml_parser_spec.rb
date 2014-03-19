@@ -7,6 +7,29 @@ describe Elasticsearch::Yaml::Parser do
     "#{examples_root}/#{template}/mappings"
   end
 
+  describe "#parse_yaml_content" do
+    subject{ parser.parse_yaml_content(yaml) }
+    context "!file not uses as inheritance" do
+      let(:yaml){ "---\nfoo:\n  bar: !file \"test.yml\"" }
+
+      it "does not load external file" do
+        subject.to_ruby.should == {
+          'foo' => { 'bar' => 'test.yml' }
+        }
+      end
+    end
+
+    context "inheritance used without !file tag" do
+      let(:yaml){ "---\nfoo:\n  inherit: \"bar.yml\"" }
+
+      it "does not load external file" do
+        subject.to_ruby.should == {
+          'foo' => { 'inherit' => 'bar.yml' }
+        }
+      end
+    end
+  end
+
   describe "#load_file" do
     subject do
       Dir.chdir(dir) do
