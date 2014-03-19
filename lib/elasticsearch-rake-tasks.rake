@@ -94,8 +94,10 @@ namespace :es do
     namespace name do
       desc "Compile the #{name} template and prints it to STDOUT"
       task :compile do
-        reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
-        puts reader.compile_template(name)
+        # reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
+        # puts reader.compile_template(name)
+        compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
+        puts compiler.compile(name)
       end
 
       desc "Deletes the #{name} template and recreates it"
