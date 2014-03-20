@@ -1,14 +1,5 @@
 module Elasticsearch
   module Helpers 
-    def Helpers.curl_request(method, url, parameters = nil)
-      method.upcase!
-      if parameters == nil
-        `curl -X#{method} #{url}`
-      else
-        `curl -X#{method} #{url} #{parameters}`
-      end
-    end
-
     class Reader
       def initialize(templates_path)
         @templates_path = templates_path
