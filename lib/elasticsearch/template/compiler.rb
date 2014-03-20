@@ -3,10 +3,16 @@ require 'yaml'
 module Elasticsearch
   module Template
     class Compiler
-      attr_reader :path
+      def self.default_parser
+        Psych::Inherit::File::Parser.new
+      end
 
-      def initialize(path)
+      attr_reader :path
+      attr_reader :parser
+
+      def initialize(path, parser = nil)
         @path = path
+        @parser = parser || Compiler.default_parser
       end
 
       def compile(template)
@@ -26,7 +32,7 @@ module Elasticsearch
       def read_settings(template_path)
         Dir.chdir(template_path) do
           filename = Dir["settings.{yml,yaml}"].first
-          YAML.load(File.read(filename))
+          parser.load_file(filename)
         end
       rescue
         {}
