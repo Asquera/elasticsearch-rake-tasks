@@ -53,6 +53,19 @@ describe Elasticsearch::Yaml::Parser do
         }
       end
     end
+
+    context "yaml file defines top !file tag" do
+      let(:yaml){ "---\nfoo:\n  - !file \"foo.yml\"" }
+
+      it "does not load external file" do
+        Elasticsearch::Yaml::Parser.should_not_receive(:parse_file)
+        subject.to_ruby
+      end
+
+      it "parses correctly" do
+        subject.to_ruby.should == { 'foo' => ['foo.yml'] }
+      end
+    end
   end
 
   describe "#load_file" do
