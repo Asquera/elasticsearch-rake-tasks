@@ -25,8 +25,7 @@ module Elasticsearch
 
       def scalar(value, anchor, tag, plain, quoted, style)
         if tag == "!file" && include_node?(last_node)
-          @stack.pop
-          @stack.last.children.pop
+          pop_previous_node
 
           nodes = @stack.last.children
           content = reader.parse_file(value).children.first
@@ -35,6 +34,13 @@ module Elasticsearch
         else
           super(value, anchor, tag, plain, quoted, style)
         end
+      end
+
+      private
+
+      def pop_previous_node
+        @stack.pop
+        @stack.last.children.pop
       end
     end
   end
