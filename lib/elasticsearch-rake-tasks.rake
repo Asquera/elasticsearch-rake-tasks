@@ -125,15 +125,10 @@ namespace :es do
       task :alias, :server, :index do |t, args|
         args.with_defaults(:server => @es_server)
 
-        require "eson-http"
         require "eson-more"
-        server = args[:server]
-        index  = args[:index]
 
-        validate_elasticsearch_configuration!(server, index)
-
-        client = Eson::HTTP::Client.new(:server => server)
-        update_alias(client, name, index)
+        client = Eson::HTTP::Client.new(:server => args[:server])
+        update_alias(client, name, args[:index])
       end
 
       desc "Updates the index to a new version with template #{name}"
