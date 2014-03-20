@@ -15,9 +15,26 @@ module Elasticsearch
           raise "Template #{template_path} not a directory"
         end
 
+        template = read_template(template_path)
         result = {}
+        result['settings'] = read_settings(template_path)
         result['mappings'] = MappingsReader.new(template_path).read
+        result['template'] = template if template
         result
+      end
+
+      def read_settings(template_path)
+        filename = "#{template_path}/settings.yaml"
+        YAML.load(File.read(filename))
+      rescue
+        {}
+      end
+
+      def read_template(template_path)
+        filename = "#{template_path}/template_pattern"
+        File.read(filename).chomp
+      rescue
+        nil
       end
     end
   end
