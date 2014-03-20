@@ -83,6 +83,10 @@ module Elasticsearch
         end
       end
 
+      def compile_template_to_string(name)
+        JSON.dump compile_template name
+      end
+
       def compile_template(name)
         require 'active_support/core_ext/hash/deep_merge'
         mappings = read_mappings(name)
@@ -90,7 +94,7 @@ module Elasticsearch
         template_pattern = read_template_pattern(name)
         output = { "settings" => settings, "mappings" => mappings }
         output['template'] = template_pattern if template_pattern
-        JSON.dump output
+        output
       end
     end
   end
