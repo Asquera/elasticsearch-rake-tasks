@@ -1,5 +1,6 @@
 require "json"
 require "elasticsearch-rake-tasks"
+require "eson-http"
 
 BASE_PATH      = "resources/elasticsearch/"
 TEMPLATES_PATH = "#{BASE_PATH}templates/"
@@ -27,66 +28,56 @@ namespace :es do
   task :seed, :server, :index do |t, args|
     args.with_defaults(:server => @es_server, :index => @es_index)
 
-    server = args[:server]
-    index = args[:index]
+    FileUtils.mkdir_p(SEED_PATH)
 
-    validate_elasticsearch_configuration!(server, index)
-
-    raise "need seed data in #{SEED_PATH}seed.json" unless File.exist?("#{SEED_PATH}seed.json")
-    sender = Elasticsearch::Helpers::ChunkedSender.new("#{server}/#{index}/_bulk")
-    File.open("#{SEED_PATH}seed.json", "rb") do |io|
-      sender.send io
-    end
+    seeder = Elasticsearch::Rake::Tasks::Seeder.new(
+      :server => args[:server],
+      :index  => args[:index]
+    )
+    seeder.upload("#{SEED_PATH}seed.json")
   end
 
   desc "Dump the elasticsearch index to the seed file"
   task :dump, :server, :index do |t, args|
     args.with_defaults(:server => @es_server, :index => @es_index)
 
-    require "eson-http"
-    require "eson-more"
-
-    server = args[:server]
-    index = args[:index]
-
-    validate_elasticsearch_configuration!(server, index)
-
-    FileUtils.mkdir_p(SEED_PATH)
-
-    c = Eson::HTTP::Client.new(:server => server, :default_parameters => {:index => index})
-    # this is a workaround for a current bug that disallows passing auto_call directly to #bulk
-    bulk_client = Eson::HTTP::Client.new(:auto_call => false)
-    File.open("#{SEED_PATH}seed.json", "w") do |f|
-      c.all(:index => index) do |chunk|
-        if chunk.size > 0
-          b = bulk_client.bulk do |b|
-            chunk.each do |doc|
-              b.index :index => nil,
-                      :type => doc["_type"],
-                      :id => doc["_id"],
-                      :doc => doc["_source"]
-            end
-          end
-          f << b.source
-        end
-      end
-    end
+    index_dump = Elasticsearch::Rake::Tasks::IndexDump.new(
+      :server => args[:server],
+      :index  => args[:index],
+    )
+    index_dump.to_file("#{SEED_PATH}seed.json")
   end
 
   desc "Dump elasticsearch index from one into another"
   task :reindex, :server, :index, :to_index do |t, args|
     args.with_defaults(:server => @es_server, :index => @es_index)
 
-    require "eson-http"
-    require "eson-more"
+    require 'eson-more'
+
+    client = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+    client.reindex(args[:index], args[:to_index])
+  end
+
+  desc "Deletes a given index, NOTE use this task carefully!"
+  task :delete, :server, :index do |t, args|
     server = args[:server]
     index  = args[:index]
-    to_index = args[:to_index]
 
     validate_elasticsearch_configuration!(server, index)
 
-    client = Eson::HTTP::Client.new(:server => server, :default_parameters => {:index => index})
-    client.reindex(index, to_index)
+    url = "#{server}/#{index}"
+    Elasticsearch::Helpers.curl_request('DELETE', url)
+  end
+
+  desc "Deletes a given template, NOTE use with care"
+  task :delete_template, :server, :template do |t, args|
+    server   = args[:server]
+    template = args[:template]
+
+    validate_elasticsearch_configuration!(server, true)
+
+    url = "#{server}/_template/#{template}"
+    Elasticsearch::Helpers.curl_request("DELETE", url)
   end
 
   Dir["#{TEMPLATES_PATH}*"].each do |folder|
@@ -102,45 +93,38 @@ namespace :es do
       task :reset, :server do |t, args|
         args.with_defaults(:server => @es_server)
 
-        server = args[:server]
+        reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
+        content = reader.compile_template(name)
+        client  = Eson::HTTP::Client.new(:server => args[:server])
 
-        validate_elasticsearch_configuration!(server, true)
-        reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
-
-        url = "#{server}/_template/#{name}"
-        Elasticsearch::Helpers.curl_request("DELETE", url)
-        Elasticsearch::Helpers.curl_request("PUT", url, "-d #{Shellwords.escape(reader.compile_template(name))}")
+        begin
+          client.delete_template(name: name)
+        rescue; end
+        client.put_template content.merge(name: name)
       end
 
       desc "Creates new index with the template #{name}"
       task :create, :server, :index do |t, args|
         args.with_defaults(:server => @es_server)
 
-        server = args[:server]
-        index  = args[:index]
+        reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
+        content = reader.compile_template(name)
+        client  = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
 
-        validate_elasticsearch_configuration!(server, index)
-        reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
-
-        url = "#{server}/#{index}"
-        Elasticsearch::Helpers.curl_request("PUT", url)
-        url = "#{server}/_template/#{index}"
-        Elasticsearch::Helpers.curl_request("PUT", url, "-d #{Shellwords.escape(reader.compile_template(name))}")
+        client.put_template content.merge(name: name)
+        begin
+          client.create_index
+        rescue; end
       end
 
       desc "Sets an alias to a specific index"
       task :alias, :server, :index do |t, args|
         args.with_defaults(:server => @es_server)
 
-        require "eson-http"
         require "eson-more"
-        server = args[:server]
-        index  = args[:index]
 
-        validate_elasticsearch_configuration!(server, index)
-
-        client = Eson::HTTP::Client.new(:server => server)
-        update_alias(client, name, index)
+        client = Eson::HTTP::Client.new(:server => args[:server])
+        update_alias(client, name, args[:index])
       end
 
       desc "Updates the index to a new version with template #{name}"
