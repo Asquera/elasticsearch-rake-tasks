@@ -1,10 +1,8 @@
-require 'active_support/core_ext/hash/deep_merge'
-
 module Elasticsearch
   module Template
     class MappingsReader
       def self.default_parser
-        Elasticsearch::Yaml::Parser.new
+        Psych::Inherit::File::Parser.new
       end
 
       attr_reader :path
