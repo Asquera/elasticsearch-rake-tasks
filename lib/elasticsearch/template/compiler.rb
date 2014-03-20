@@ -24,8 +24,10 @@ module Elasticsearch
       end
 
       def read_settings(template_path)
-        filename = "#{template_path}/settings.yaml"
-        YAML.load(File.read(filename))
+        Dir.chdir(template_path) do
+          filename = Dir["settings.{yml,yaml}"].first
+          YAML.load(File.read(filename))
+        end
       rescue
         {}
       end
