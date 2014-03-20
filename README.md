@@ -16,7 +16,15 @@ Or install it yourself as:
 
     $ gem install elasticsearch-rake-tasks
 
-## Prerequisites
+## Usage
+
+In your Rakefile, use:
+
+```ruby
+load 'elasticsearch-rake-tasks.rake'
+```
+
+## Usage
 
 In order to get the elasticsearch rake tasks to find all templates and settings for an index, the following folder structure must be in place.
 
@@ -24,21 +32,24 @@ In order to get the elasticsearch rake tasks to find all templates and settings 
 ./resources
 |-- elasticsearch
   |-- templates
-    |-- application
+    |-- my_index <--- your index name
       |-- mappings
-        |-- _default.yaml
-        |-- type_a.yaml
-        |-- ..
-      |-- settings.yaml
-      |-- template_pattern
+        |-- _default.yaml   <--- shared definitions
+        |-- type_a.yaml     <--- a type
+        |-- ..              <--- other types
+      |-- settings.yaml     <--- index settings
+      |-- template_pattern  <--- if you want to use this as a template,
+                                 this file holds your pattern
 ```
 
-The `elasticsearch` folder must be located under a `resources` folder in the root directory of your project. Inside the `templates` folder a list of directories define the indices for which mappings and settings are used from, in the example above an index `application` would the available.
+The `elasticsearch` folder must be located under a `resources` folder in the root directory of your project. Inside the `templates` folder a list of directories define the indices for which mappings and settings are used from, in the example above an index `my_index` would the available.
+
+This will be configurable in future versions.
 
 The following folders & files are used:
 
 * `settings.yaml` defines the analyzers and filters that are made available for use in the type mappings
-* `template_pattern` is used for versioning and defines the current active index, e.g. `application-1.0`. It is useful in the re-indexing step to define what the new index should be
+* `template_pattern` is the template pattern, as described [elasticsearch index template guide](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-templates.html).
 * `mappings` is the folder where all type definitions reside. The files names must match exactly the document types that are indexed, e.g. when a document is of type Tweet, a `Tweet.yaml` (case sensitive) must be available in this folder describing the properties of such a document
 * `_default.yaml` is typically the base type definition from which all types inherit shared definitions
 
@@ -47,13 +58,13 @@ The following folders & files are used:
 To show all available rake tasks, type `bundle exec rake -T` from root. When the elasticsearch folder structure is in place all settings for specified indices are automatically found and shown.
 
 ```
-rake es:application:compile
+rake es:my_index:compile
 ```
 
-Compiles the template for index `application`, while
+Compiles the template for index `my_index`, while
 
 ```
-rake es:application:reset
+rake es:my_index:reset
 ```
 
 deletes the given template and recreates it.
