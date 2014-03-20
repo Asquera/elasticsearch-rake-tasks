@@ -78,16 +78,10 @@ namespace :es do
   task :reindex, :server, :index, :to_index do |t, args|
     args.with_defaults(:server => @es_server, :index => @es_index)
 
-    require "eson-http"
-    require "eson-more"
-    server = args[:server]
-    index  = args[:index]
-    to_index = args[:to_index]
+    require 'eson-more'
 
-    validate_elasticsearch_configuration!(server, index)
-
-    client = Eson::HTTP::Client.new(:server => server, :default_parameters => {:index => index})
-    client.reindex(index, to_index)
+    client = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+    client.reindex(args[:index], args[:to_index])
   end
 
   Dir["#{TEMPLATES_PATH}*"].each do |folder|
