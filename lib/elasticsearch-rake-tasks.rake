@@ -90,7 +90,7 @@ namespace :es do
       desc "Compile the #{name} template and prints it to STDOUT"
       task :compile do
         reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
-        puts reader.compile_template_to_string(name)
+        puts JSON.dump reader.compile_template(name)
       end
 
       desc "Deletes the #{name} template and recreates it"

@@ -74,10 +74,6 @@ module Elasticsearch
         end
       end
 
-      def compile_template_to_string(name)
-        JSON.dump compile_template name
-      end
-
       def compile_template(name)
         require 'active_support/core_ext/hash/deep_merge'
         mappings = read_mappings(name)
