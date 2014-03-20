@@ -99,8 +99,8 @@ namespace :es do
 
         reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
         content = reader.compile_template(name)
-
         client  = Eson::HTTP::Client.new(:server => args[:server])
+
         begin
           client.delete_template(name: name)
         rescue; end
@@ -111,16 +111,14 @@ namespace :es do
       task :create, :server, :index do |t, args|
         args.with_defaults(:server => @es_server)
 
-        server = args[:server]
-        index  = args[:index]
+        reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
+        content = reader.compile_template(name)
+        client  = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
 
-        validate_elasticsearch_configuration!(server, index)
-        reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
-
-        url = "#{server}/#{index}"
-        Elasticsearch::Helpers.curl_request("PUT", url)
-        url = "#{server}/_template/#{index}"
-        Elasticsearch::Helpers.curl_request("PUT", url, "-d #{Shellwords.escape(reader.compile_template_to_string(name))}")
+        client.put_template content.merge(name: name)
+        begin
+          client.create_index
+        rescue; end
       end
 
       desc "Sets an alias to a specific index"
