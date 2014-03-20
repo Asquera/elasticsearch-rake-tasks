@@ -1,5 +1,6 @@
 require "json"
 require "elasticsearch-rake-tasks"
+require "eson-http"
 
 BASE_PATH = "resources/elasticsearch/"
 TEMPLATES_PATH = "#{BASE_PATH}templates/"
@@ -77,16 +78,10 @@ namespace :es do
   task :reindex, :server, :index, :to_index do |t, args|
     args.with_defaults(:server => @es_server, :index => @es_index)
 
-    require "eson-http"
-    require "eson-more"
-    server = args[:server]
-    index  = args[:index]
-    to_index = args[:to_index]
+    require 'eson-more'
 
-    validate_elasticsearch_configuration!(server, index)
-
-    client = Eson::HTTP::Client.new(:server => server, :default_parameters => {:index => index})
-    client.reindex(index, to_index)
+    client = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+    client.reindex(args[:index], args[:to_index])
   end
 
   Dir["#{TEMPLATES_PATH}*"].each do |folder|
@@ -95,52 +90,45 @@ namespace :es do
       desc "Compile the #{name} template and prints it to STDOUT"
       task :compile do
         reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
-        puts reader.compile_template(name)
+        puts JSON.dump reader.compile_template(name)
       end
 
       desc "Deletes the #{name} template and recreates it"
       task :reset, :server do |t, args|
         args.with_defaults(:server => @es_server)
 
-        server = args[:server]
+        reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
+        content = reader.compile_template(name)
+        client  = Eson::HTTP::Client.new(:server => args[:server])
 
-        validate_elasticsearch_configuration!(server, true)
-        reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
-
-        url = "#{server}/_template/#{name}"
-        Elasticsearch::Helpers.curl_request("DELETE", url)
-        Elasticsearch::Helpers.curl_request("PUT", url, "-d #{Shellwords.escape(reader.compile_template(name))}")
+        begin
+          client.delete_template(name: name)
+        rescue; end
+        client.put_template content.merge(name: name)
       end
 
       desc "Creates new index with the template #{name}"
       task :create, :server, :index do |t, args|
         args.with_defaults(:server => @es_server)
 
-        server = args[:server]
-        index  = args[:index]
+        reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
+        content = reader.compile_template(name)
+        client  = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
 
-        validate_elasticsearch_configuration!(server, index)
-        reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
-
-        url = "#{server}/#{index}"
-        Elasticsearch::Helpers.curl_request("PUT", url)
-        url = "#{server}/_template/#{index}"
-        Elasticsearch::Helpers.curl_request("PUT", url, "-d #{Shellwords.escape(reader.compile_template(name))}")
+        client.put_template content.merge(name: name)
+        begin
+          client.create_index
+        rescue; end
       end
 
       desc "Sets an alias to a specific index"
       task :alias, :server, :index do |t, args|
         args.with_defaults(:server => @es_server)
 
-        require "eson-http"
         require "eson-more"
-        server = args[:server]
-        index  = args[:index]
 
-        validate_elasticsearch_configuration!(server, index)
-
-        client = Eson::HTTP::Client.new(:server => server)
-        update_alias(client, name, index)
+        client = Eson::HTTP::Client.new(:server => args[:server])
+        update_alias(client, name, args[:index])
       end
 
       desc "Updates the index to a new version with template #{name}"

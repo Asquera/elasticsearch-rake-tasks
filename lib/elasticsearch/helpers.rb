@@ -1,14 +1,5 @@
 module Elasticsearch
   module Helpers 
-    def Helpers.curl_request(method, url, parameters = nil)
-      method.upcase!
-      if parameters == nil
-        `curl -X#{method} #{url}`
-      else
-        `curl -X#{method} #{url} #{parameters}`
-      end
-    end
-
     class Reader
       def initialize(templates_path)
         @templates_path = templates_path
@@ -90,7 +81,7 @@ module Elasticsearch
         template_pattern = read_template_pattern(name)
         output = { "settings" => settings, "mappings" => mappings }
         output['template'] = template_pattern if template_pattern
-        JSON.dump output
+        output
       end
     end
   end
