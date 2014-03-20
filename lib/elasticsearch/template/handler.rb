@@ -3,6 +3,8 @@ require "psych"
 module Elasticsearch
   module Template
     class Handler < Psych::TreeBuilder
+      TAG_NAME = '!file'
+      NODE_NAME = 'inherit'
 
       attr_reader :reader
 
@@ -20,11 +22,11 @@ module Elasticsearch
       end
 
       def include_node?(node)
-        node.respond_to?(:value) && node.value == 'inherit'
+        node.respond_to?(:value) && node.value == NODE_NAME
       end
 
       def scalar(value, anchor, tag, plain, quoted, style)
-        if tag == "!file" && include_node?(last_node)
+        if tag == TAG_NAME && include_node?(last_node)
           pop_previous_node
 
           nodes = @stack.last.children
@@ -32,7 +34,7 @@ module Elasticsearch
           nodes << content
           push content
         else
-          super(value, anchor, tag, plain, quoted, style)
+          super
         end
       end
 
