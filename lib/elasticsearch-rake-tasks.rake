@@ -48,6 +48,14 @@ namespace :es do
     index_dump.to_file("#{SEED_PATH}seed.json")
   end
 
+  desc "Creates new index"
+  task :create, :server, :index do |t, args|
+    args.with_defaults(:server => @es_server)
+
+    client = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+    client.create_index
+  end
+
   desc "Dump elasticsearch index from one into another"
   task :reindex, :server, :index, :to_index do |t, args|
     args.with_defaults(:server => @es_server, :index => @es_index)
@@ -60,24 +68,14 @@ namespace :es do
 
   desc "Deletes a given index, NOTE use this task carefully!"
   task :delete, :server, :index do |t, args|
-    server = args[:server]
-    index  = args[:index]
-
-    validate_elasticsearch_configuration!(server, index)
-
-    url = "#{server}/#{index}"
-    Elasticsearch::Helpers.curl_request('DELETE', url)
+    client = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+    client.delete_index
   end
 
   desc "Deletes a given template, NOTE use with care"
   task :delete_template, :server, :template do |t, args|
-    server   = args[:server]
-    template = args[:template]
-
-    validate_elasticsearch_configuration!(server, true)
-
-    url = "#{server}/_template/#{template}"
-    Elasticsearch::Helpers.curl_request("DELETE", url)
+    client = Eson::HTTP::Client.new(:server => args[:server])
+    client.delete_template :name => args[:template]
   end
 
   Dir["#{TEMPLATES_PATH}*"].each do |folder|
@@ -87,6 +85,17 @@ namespace :es do
       task :compile do
         reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
         puts JSON.dump reader.compile_template(name)
+      end
+
+      desc "Compiles and uploads the #{name} template"
+      task :create, :server, :template do |t, args|
+        args.with_defaults(:server => @es_server, :template => name)
+
+        reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
+        content = reader.compile_template(name)
+        client  = Eson::HTTP::Client.new(:server => args[:server])
+
+        client.put_template content.merge(name: args[:template])
       end
 
       desc "Deletes the #{name} template and recreates it"
@@ -101,20 +110,6 @@ namespace :es do
           client.delete_template(name: name)
         rescue; end
         client.put_template content.merge(name: name)
-      end
-
-      desc "Creates new index with the template #{name}"
-      task :create, :server, :index do |t, args|
-        args.with_defaults(:server => @es_server)
-
-        reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
-        content = reader.compile_template(name)
-        client  = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
-
-        client.put_template content.merge(name: name)
-        begin
-          client.create_index
-        rescue; end
       end
 
       desc "Sets an alias to a specific index"
@@ -135,7 +130,7 @@ namespace :es do
         old_index = args[:old_index]
         new_index = args[:new_index]
 
-        Rake::Task["es:#{name}:create"].invoke(server, new_index)
+        Rake::Task["es:create"].invoke(server, new_index)
         Rake::Task["es:reindex"].invoke(server, old_index, new_index)
         Rake::Task["es:#{name}:alias"].invoke(server, new_index)
       end
