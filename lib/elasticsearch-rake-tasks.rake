@@ -91,18 +91,18 @@ namespace :es do
     namespace name do
       desc "Compile the #{name} template and prints it to STDOUT"
       task :compile do
-        reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
+        compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
         log_info "Compiling template '#{name}'"
-        puts JSON.dump reader.compile_template(name)
+        puts JSON.dump compiler.compile(name)
       end
 
       desc "Compiles and uploads the #{name} template"
       task :create, :server, :template do |t, args|
         args.with_defaults(:server => @es_server, :template => name)
 
-        reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
-        content = reader.compile_template(name)
-        client  = Eson::HTTP::Client.new(:server => args[:server])
+        compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
+        content  = compiler.compile(name)
+        client   = Eson::HTTP::Client.new(:server => args[:server])
 
         log_info "Uploading template '#{name}' as '#{args[:template]}' to '#{args[:server]}'"
         client.put_template content.merge(name: args[:template])
@@ -112,9 +112,9 @@ namespace :es do
       task :reset, :server, :template do |t, args|
         args.with_defaults(:server => @es_server, :template => name)
 
-        reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
-        content = reader.compile_template(name)
-        client  = Eson::HTTP::Client.new(:server => args[:server])
+        compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
+        content  = compiler.compile(name)
+        client   = Eson::HTTP::Client.new(:server => args[:server])
 
         log_info "Resetting template '#{name}' as '#{args[:template]}' to '#{args[:server]}'"
         client.delete_template(name: args[:template])

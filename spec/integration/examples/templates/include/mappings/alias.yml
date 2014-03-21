@@ -1,0 +1,4 @@
+---
+properties:
+  inherit: !file "bar.yml"
+  surname: *string_analyzed

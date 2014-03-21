@@ -1,0 +1,6 @@
+---
+properties:
+  inherit: !file "foo.yml"
+  name:
+    type: string
+    analyzer: foo_analyzer
