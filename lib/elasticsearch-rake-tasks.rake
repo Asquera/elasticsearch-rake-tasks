@@ -10,11 +10,6 @@ SEED_PATH      = "#{BASE_PATH}dumps/"
 @es_server = ENV['ES_SERVER']
 @es_index  = ENV['ES_INDEX']
 
-def validate_elasticsearch_configuration!(server, index)
-  raise "ES_SERVER not set!" unless server
-  raise "ES_INDEX not set!" unless index
-end
-
 def update_alias(client, name, new_index)
   indices = client.get_aliases.select{ |k,v| v['aliases'] && v['aliases'][name] }
   client.aliases do |req|
@@ -48,6 +43,14 @@ namespace :es do
     index_dump.to_file("#{SEED_PATH}seed.json")
   end
 
+  desc "Creates new index"
+  task :create, :server, :index do |t, args|
+    args.with_defaults(:server => @es_server)
+
+    client = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+    client.create_index
+  end
+
   desc "Dump elasticsearch index from one into another"
   task :reindex, :server, :index, :to_index do |t, args|
     args.with_defaults(:server => @es_server, :index => @es_index)
@@ -79,6 +82,17 @@ namespace :es do
         puts JSON.dump compiler.compile(name)
       end
 
+      desc "Compiles and uploads the #{name} template"
+      task :create, :server, :template do |t, args|
+        args.with_defaults(:server => @es_server, :template => name)
+
+        compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
+        content  = compiler.compile(name)
+        client   = Eson::HTTP::Client.new(:server => args[:server])
+
+        client.put_template content.merge(name: args[:template])
+      end
+
       desc "Deletes the #{name} template and recreates it"
       task :reset, :server do |t, args|
         args.with_defaults(:server => @es_server)
@@ -91,20 +105,6 @@ namespace :es do
           client.delete_template(name: name)
         rescue; end
         client.put_template content.merge(name: name)
-      end
-
-      desc "Creates new index with the template #{name}"
-      task :create, :server, :index do |t, args|
-        args.with_defaults(:server => @es_server)
-
-        compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
-        content  = compiler.compile(name)
-        client   = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
-
-        client.put_template content.merge(name: name)
-        begin
-          client.create_index
-        rescue; end
       end
 
       desc "Sets an alias to a specific index"
@@ -125,7 +125,7 @@ namespace :es do
         old_index = args[:old_index]
         new_index = args[:new_index]
 
-        Rake::Task["es:#{name}:create"].invoke(server, new_index)
+        Rake::Task["es:create"].invoke(server, new_index)
         Rake::Task["es:reindex"].invoke(server, old_index, new_index)
         Rake::Task["es:#{name}:alias"].invoke(server, new_index)
       end
