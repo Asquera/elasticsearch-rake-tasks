@@ -87,6 +87,17 @@ namespace :es do
         puts JSON.dump reader.compile_template(name)
       end
 
+      desc "Compiles and uploads the #{name} template"
+      task :create, :server, :template do |t, args|
+        args.with_defaults(:server => @es_server, :template => name)
+
+        reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
+        content = reader.compile_template(name)
+        client  = Eson::HTTP::Client.new(:server => args[:server])
+
+        client.put_template content.merge(name: args[:template])
+      end
+
       desc "Deletes the #{name} template and recreates it"
       task :reset, :server do |t, args|
         args.with_defaults(:server => @es_server)
