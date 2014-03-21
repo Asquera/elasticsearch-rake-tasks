@@ -2,6 +2,9 @@ require "json"
 require "elasticsearch-rake-tasks"
 require "eson-http"
 
+# to set a custom logger
+# Elasticsearch::Logging.logger = MyLogger.new
+
 BASE_PATH      = "resources/elasticsearch/"
 TEMPLATES_PATH = "#{BASE_PATH}templates/"
 SEED_PATH      = "#{BASE_PATH}dumps/"
@@ -18,6 +21,10 @@ def update_alias(client, name, new_index)
   end
 end
 
+def log_info(line)
+  Elasticsearch::Logging.logger.info line
+end
+
 namespace :es do
   desc "Seed the elasticsearch cluster with the data dump"
   task :seed, :server, :index do |t, args|
@@ -29,6 +36,7 @@ namespace :es do
       :server => args[:server],
       :index  => args[:index]
     )
+    log_info "Uploading '#{SEED_PATH}seed.json' to '#{args[:server]}/#{args[:index]}'"
     seeder.upload("#{SEED_PATH}seed.json")
   end
 
@@ -40,6 +48,7 @@ namespace :es do
       :server => args[:server],
       :index  => args[:index],
     )
+    log_info "Dumping docs from '#{args[:server]}/#{args[:index]}' to '#{SEED_PATH}seed.json'"
     index_dump.to_file("#{SEED_PATH}seed.json")
   end
 
@@ -48,6 +57,7 @@ namespace :es do
     args.with_defaults(:server => @es_server)
 
     client = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+    log_info "Creating index '#{args[:server]}/#{args[:index]}'"
     client.create_index
   end
 
@@ -58,19 +68,22 @@ namespace :es do
     require 'eson-more'
 
     client = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+    log_info "Reindexing '#{args[:server]}/#{args[:index]}' to index '#{args[:to_index]}'"
     client.reindex(args[:index], args[:to_index])
   end
 
   desc "Deletes a given index, NOTE use this task carefully!"
   task :delete, :server, :index do |t, args|
     client = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+    log_info "Deleting index '#{args[:server]}/#{args[:index]}'"
     client.delete_index
   end
 
   desc "Deletes a given template, NOTE use with care"
   task :delete_template, :server, :template do |t, args|
     client = Eson::HTTP::Client.new(:server => args[:server])
-    client.delete_template(name: args[:template])
+    log_info "Deleting template '#{args[:template]}' at '#{args[:server]}'"
+    client.delete_template :name => args[:template]
   end
 
   Dir["#{TEMPLATES_PATH}*"].each do |folder|
@@ -79,6 +92,7 @@ namespace :es do
       desc "Compile the #{name} template and prints it to STDOUT"
       task :compile do
         compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
+        log_info "Compiling template '#{name}'"
         puts JSON.dump compiler.compile(name)
       end
 
@@ -90,21 +104,21 @@ namespace :es do
         content  = compiler.compile(name)
         client   = Eson::HTTP::Client.new(:server => args[:server])
 
+        log_info "Uploading template '#{name}' as '#{args[:template]}' to '#{args[:server]}'"
         client.put_template content.merge(name: args[:template])
       end
 
       desc "Deletes the #{name} template and recreates it"
-      task :reset, :server do |t, args|
-        args.with_defaults(:server => @es_server)
+      task :reset, :server, :template do |t, args|
+        args.with_defaults(:server => @es_server, :template => name)
 
         compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
         content  = compiler.compile(name)
         client   = Eson::HTTP::Client.new(:server => args[:server])
 
-        begin
-          client.delete_template(name: name)
-        rescue; end
-        client.put_template content.merge(name: name)
+        log_info "Resetting template '#{name}' as '#{args[:template]}' to '#{args[:server]}'"
+        client.delete_template(name: args[:template])
+        client.put_template content.merge(name: args[:template])
       end
 
       desc "Sets an alias to a specific index"
@@ -114,6 +128,7 @@ namespace :es do
         require "eson-more"
 
         client = Eson::HTTP::Client.new(:server => args[:server])
+        log_info "Setting alias '#{name}' to index '#{args[:index]}' at '#{args[:server]}'"
         update_alias(client, name, args[:index])
       end
 
@@ -125,6 +140,7 @@ namespace :es do
         old_index = args[:old_index]
         new_index = args[:new_index]
 
+        log_info "Flip index from '#{args[:old_index]}' to '#{args[:new_index]}' at '#{args[:server]}'"
         Rake::Task["es:create"].invoke(server, new_index)
         Rake::Task["es:reindex"].invoke(server, old_index, new_index)
         Rake::Task["es:#{name}:alias"].invoke(server, new_index)
