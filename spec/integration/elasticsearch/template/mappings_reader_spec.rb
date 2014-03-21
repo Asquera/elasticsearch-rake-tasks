@@ -5,13 +5,13 @@ describe Elasticsearch::Template::MappingsReader do
 
   describe "#initialize" do
     it "creates object with path" do
-      expect{ Elasticsearch::Template::MappingsReader.new('') }.to_not raise_error
+      expect{ described_class.new('') }.to_not raise_error
     end
   end
 
   describe "reading simple template" do
     let(:path){ "#{examples_root}/#{template}" }
-    subject{ Elasticsearch::Template::MappingsReader.new(path).read }
+    subject{ described_class.new(path).read }
 
     it "contains type named 'foo'" do
       subject['foo'].should_not be_nil

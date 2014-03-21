@@ -5,13 +5,13 @@ describe Elasticsearch::Template::Compiler do
 
   describe "#initialize" do
     it "creates object" do
-      expect{ Elasticsearch::Template::Compiler.new('') }.to_not raise_error
+      expect{ described_class.new('') }.to_not raise_error
     end
   end
 
   describe "#compile" do
     context "with missing template" do
-      subject{ Elasticsearch::Template::Compiler.new(root) }
+      subject{ described_class.new(root) }
 
       it "raises an error" do
         expect{ subject.compile('unknown') }.to raise_error
@@ -20,7 +20,7 @@ describe Elasticsearch::Template::Compiler do
 
     context "with existing template" do
       let(:template){ 'simple' }
-      subject{ Elasticsearch::Template::Compiler.new(root) }
+      subject{ described_class.new(root) }
 
       it "does not raise an error" do
         expect{ subject.compile(template) }.to_not raise_error
@@ -30,7 +30,7 @@ describe Elasticsearch::Template::Compiler do
 
   describe "compiling simple template" do
     let(:template){ 'simple' }
-    subject{ Elasticsearch::Template::Compiler.new(root).compile(template) }
+    subject{ described_class.new(root).compile(template) }
 
     it "contains mappings entry" do
       subject['mappings'].should_not be_nil

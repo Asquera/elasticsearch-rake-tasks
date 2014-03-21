@@ -9,7 +9,7 @@ describe Elasticsearch::IO::ChunkedSender do
     }
 
     let(:sink){ double('sink', :<< => lines, :flush => true) }
-    subject{ Elasticsearch::IO::ChunkedSender.new(sink) }
+    subject{ described_class.new(sink) }
 
     it "should call <<" do
       sink.should_receive(:<<).once
