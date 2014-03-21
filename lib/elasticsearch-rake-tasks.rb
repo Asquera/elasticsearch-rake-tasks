@@ -1,4 +1,6 @@
 require "elasticsearch/helpers"
+require "elasticsearch/logging"
+
 require "elasticsearch/io/bulk_sink"
 require "elasticsearch/io/chunked_sender"
 
