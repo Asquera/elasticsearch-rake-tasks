@@ -10,11 +10,6 @@ SEED_PATH      = "#{BASE_PATH}dumps/"
 @es_server = ENV['ES_SERVER']
 @es_index  = ENV['ES_INDEX']
 
-def validate_elasticsearch_configuration!(server, index)
-  raise "ES_SERVER not set!" unless server
-  raise "ES_INDEX not set!" unless index
-end
-
 def update_alias(client, name, new_index)
   indices = client.get_aliases.select{ |k,v| v['aliases'] && v['aliases'][name] }
   client.aliases do |req|
