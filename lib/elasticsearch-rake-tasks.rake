@@ -48,6 +48,14 @@ namespace :es do
     index_dump.to_file("#{SEED_PATH}seed.json")
   end
 
+  desc "Creates new index"
+  task :create, :server, :index do |t, args|
+    args.with_defaults(:server => @es_server)
+
+    client = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+    client.create_index
+  end
+
   desc "Dump elasticsearch index from one into another"
   task :reindex, :server, :index, :to_index do |t, args|
     args.with_defaults(:server => @es_server, :index => @es_index)
@@ -93,20 +101,6 @@ namespace :es do
         client.put_template content.merge(name: name)
       end
 
-      desc "Creates new index with the template #{name}"
-      task :create, :server, :index do |t, args|
-        args.with_defaults(:server => @es_server)
-
-        reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
-        content = reader.compile_template(name)
-        client  = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
-
-        client.put_template content.merge(name: name)
-        begin
-          client.create_index
-        rescue; end
-      end
-
       desc "Sets an alias to a specific index"
       task :alias, :server, :index do |t, args|
         args.with_defaults(:server => @es_server)
@@ -125,7 +119,7 @@ namespace :es do
         old_index = args[:old_index]
         new_index = args[:new_index]
 
-        Rake::Task["es:#{name}:create"].invoke(server, new_index)
+        Rake::Task["es:create"].invoke(server, new_index)
         Rake::Task["es:reindex"].invoke(server, old_index, new_index)
         Rake::Task["es:#{name}:alias"].invoke(server, new_index)
       end
