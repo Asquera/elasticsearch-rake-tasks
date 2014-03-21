@@ -23,6 +23,10 @@ def update_alias(client, name, new_index)
   end
 end
 
+def info_log(line)
+  STDOUT.puts "[#{Time.now.strftime("%FT%T")}] :: #{line}"
+end
+
 namespace :es do
   desc "Seed the elasticsearch cluster with the data dump"
   task :seed, :server, :index do |t, args|
@@ -34,6 +38,7 @@ namespace :es do
       :server => args[:server],
       :index  => args[:index]
     )
+    info_log "Uploading '#{SEED_PATH}seed.json' to '#{args[:server]}/#{args[:index]}'"
     seeder.upload("#{SEED_PATH}seed.json")
   end
 
@@ -45,6 +50,7 @@ namespace :es do
       :server => args[:server],
       :index  => args[:index],
     )
+    info_log "Dumping docs from '#{args[:server]}/#{args[:index]}' to '#{SEED_PATH}seed.json'"
     index_dump.to_file("#{SEED_PATH}seed.json")
   end
 
@@ -63,6 +69,7 @@ namespace :es do
     require 'eson-more'
 
     client = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+    info_log "Reindexing '#{args[:server]}/#{args[:index]}' to index '#{args[:to_index]}'"
     client.reindex(args[:index], args[:to_index])
   end
 
