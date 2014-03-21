@@ -59,6 +59,7 @@ namespace :es do
     args.with_defaults(:server => @es_server)
 
     client = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+    info_log "Creating index '#{args[:server]}/#{args[:index]}'"
     client.create_index
   end
 
@@ -76,12 +77,14 @@ namespace :es do
   desc "Deletes a given index, NOTE use this task carefully!"
   task :delete, :server, :index do |t, args|
     client = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+    info_log "Deleting index '#{args[:server]}/#{args[:index]}'"
     client.delete_index
   end
 
   desc "Deletes a given template, NOTE use with care"
   task :delete_template, :server, :template do |t, args|
     client = Eson::HTTP::Client.new(:server => args[:server])
+    info_log "Deleting template '#{args[:template]}' at '#{args[:server]}'"
     client.delete_template :name => args[:template]
   end
 
@@ -91,6 +94,7 @@ namespace :es do
       desc "Compile the #{name} template and prints it to STDOUT"
       task :compile do
         reader = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
+        info_log "Compiling template '#{name}'"
         puts JSON.dump reader.compile_template(name)
       end
 
@@ -102,21 +106,21 @@ namespace :es do
         content = reader.compile_template(name)
         client  = Eson::HTTP::Client.new(:server => args[:server])
 
+        info_log "Uploading template '#{name}' as '#{args[:template]}' to '#{args[:server]}'"
         client.put_template content.merge(name: args[:template])
       end
 
       desc "Deletes the #{name} template and recreates it"
-      task :reset, :server do |t, args|
-        args.with_defaults(:server => @es_server)
+      task :reset, :server, :template do |t, args|
+        args.with_defaults(:server => @es_server, :template => name)
 
         reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
         content = reader.compile_template(name)
         client  = Eson::HTTP::Client.new(:server => args[:server])
 
-        begin
-          client.delete_template(name: name)
-        rescue; end
-        client.put_template content.merge(name: name)
+        info_log "Resetting template '#{name}' as '#{args[:template]}' to '#{args[:server]}'"
+        client.delete_template(name: args[:template])
+        client.put_template content.merge(name: args[:template])
       end
 
       desc "Sets an alias to a specific index"
@@ -126,6 +130,7 @@ namespace :es do
         require "eson-more"
 
         client = Eson::HTTP::Client.new(:server => args[:server])
+        info_log "Setting alias '#{name}' to index '#{args[:index]}' at '#{args[:server]}'"
         update_alias(client, name, args[:index])
       end
 
@@ -137,6 +142,7 @@ namespace :es do
         old_index = args[:old_index]
         new_index = args[:new_index]
 
+        info_log "Flip index from '#{args[:old_index]}' to '#{args[:new_index]}' at '#{args[:server]}'"
         Rake::Task["es:create"].invoke(server, new_index)
         Rake::Task["es:reindex"].invoke(server, old_index, new_index)
         Rake::Task["es:#{name}:alias"].invoke(server, new_index)
