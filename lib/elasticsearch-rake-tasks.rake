@@ -60,24 +60,14 @@ namespace :es do
 
   desc "Deletes a given index, NOTE use this task carefully!"
   task :delete, :server, :index do |t, args|
-    server = args[:server]
-    index  = args[:index]
-
-    validate_elasticsearch_configuration!(server, index)
-
-    url = "#{server}/#{index}"
-    Elasticsearch::Helpers.curl_request('DELETE', url)
+    client = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+    client.delete_index
   end
 
   desc "Deletes a given template, NOTE use with care"
   task :delete_template, :server, :template do |t, args|
-    server   = args[:server]
-    template = args[:template]
-
-    validate_elasticsearch_configuration!(server, true)
-
-    url = "#{server}/_template/#{template}"
-    Elasticsearch::Helpers.curl_request("DELETE", url)
+    client = Eson::HTTP::Client.new(:server => args[:server])
+    client.delete_template(name: args[:template])
   end
 
   Dir["#{TEMPLATES_PATH}*"].each do |folder|
@@ -93,9 +83,9 @@ namespace :es do
       task :reset, :server do |t, args|
         args.with_defaults(:server => @es_server)
 
-        reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
-        content = reader.compile_template(name)
-        client  = Eson::HTTP::Client.new(:server => args[:server])
+        compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
+        content  = compiler.compile(name)
+        client   = Eson::HTTP::Client.new(:server => args[:server])
 
         begin
           client.delete_template(name: name)
@@ -107,9 +97,9 @@ namespace :es do
       task :create, :server, :index do |t, args|
         args.with_defaults(:server => @es_server)
 
-        reader  = Elasticsearch::Helpers::Reader.new TEMPLATES_PATH
-        content = reader.compile_template(name)
-        client  = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
+        compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
+        content  = compiler.compile(name)
+        client   = Eson::HTTP::Client.new(:server => args[:server]).with(:index => args[:index])
 
         client.put_template content.merge(name: name)
         begin

@@ -3,7 +3,6 @@ require "psych/inherit/file"
 require "elasticsearch/template/mappings_reader"
 require "elasticsearch/template/compiler"
 
-require "elasticsearch/helpers"
 require "elasticsearch/io/bulk_sink"
 require "elasticsearch/io/chunked_sender"
 
