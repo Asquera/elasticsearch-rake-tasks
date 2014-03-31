@@ -97,7 +97,7 @@ namespace :es do
       end
 
       desc "Compiles and uploads the #{name} template"
-      task :create, :server, :template do |t, args|
+      task :upload, :server, :template do |t, args|
         args.with_defaults(:server => @es_server, :template => name)
 
         compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
@@ -106,6 +106,19 @@ namespace :es do
 
         log_info "Uploading template '#{name}' as '#{args[:template]}' to '#{args[:server]}'"
         client.put_template content.merge(name: args[:template])
+      end
+
+      desc "Creates an index with the #{name} template"
+      task :create, :server, :index do |t, args|
+        args.with_defaults(:server => @es_server)
+
+        compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
+        content  = compiler.compile(name)
+        content.delete('template')
+        client   = Eson::HTTP::Client.new(:server => args[:server])
+
+        log_info "Creating index #{args[:index]} with template '#{name}' at '#{args[:server]}'"
+        client.create_index content.merge(index: args[:index])
       end
 
       desc "Deletes the #{name} template and recreates it"
