@@ -23,8 +23,6 @@ module Elasticsearch
           end
         end
         mappings
-      rescue
-        {}
       end
 
       def visible_types
