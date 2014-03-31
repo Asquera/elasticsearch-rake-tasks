@@ -32,10 +32,12 @@ module Elasticsearch
       def read_settings(template_path)
         Dir.chdir(template_path) do
           filename = Dir["settings.{yml,yaml}"].first
-          parser.load_file(filename)
+          if File.exists?(filename)
+            parser.load_file(filename)
+          else
+            {}
+          end
         end
-      rescue
-        {}
       end
 
       def read_template(template_path)

@@ -34,7 +34,7 @@ In order to get the elasticsearch rake tasks to find all templates and settings 
   |-- templates
     |-- my_index <--- your index name
       |-- mappings
-        |-- _default.yaml   <--- shared definitions
+        |-- _default.yaml   <--- a shared type, not visible in the template
         |-- type_a.yaml     <--- a type
         |-- ..              <--- other types
       |-- settings.yaml     <--- index settings
@@ -42,7 +42,8 @@ In order to get the elasticsearch rake tasks to find all templates and settings 
                                  this file holds your pattern
 ```
 
-The `elasticsearch` folder must be located under a `resources` folder in the root directory of your project. Inside the `templates` folder a list of directories define the indices for which mappings and settings are used from, in the example above an index `my_index` would the available.
+The `elasticsearch` folder must be located under a `resources` folder in the root directory of your project. Inside the `templates` folder a list of directories define the indices for which mappings and settings are used from, in the example above an index `my_index` would the available. A type filename starting with `_` (underscore) is not visible in the final template but can be included in other types, see the README of [psych-inherit-file](https://github.com/Asquera/psych-inherit-file).
+
 
 This will be configurable in future versions.
 

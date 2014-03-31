@@ -25,6 +25,16 @@ def log_info(line)
   Elasticsearch::Logging.logger.info line
 end
 
+def esclient_with_template(template, server, &block)
+  compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
+  content  = compiler.compile(template)
+  client   = Eson::HTTP::Client.new(:server => server)
+
+  if block_given?
+    block.call(client, content)
+  end
+end
+
 namespace :es do
   desc "Seed the elasticsearch cluster with the data dump"
   task :seed, :server, :index do |t, args|
@@ -100,38 +110,31 @@ namespace :es do
       task :upload, :server, :template do |t, args|
         args.with_defaults(:server => @es_server, :template => name)
 
-        compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
-        content  = compiler.compile(name)
-        client   = Eson::HTTP::Client.new(:server => args[:server])
-
-        log_info "Uploading template '#{name}' as '#{args[:template]}' to '#{args[:server]}'"
-        client.put_template content.merge(name: args[:template])
+        esclient_with_template(name, args[:server]) do |client, content|
+          log_info "Uploading template '#{name}' as '#{args[:template]}' to '#{args[:server]}'"
+          client.put_template content.merge(name: args[:template])
+        end
       end
 
       desc "Creates an index with the #{name} template"
       task :create, :server, :index do |t, args|
         args.with_defaults(:server => @es_server)
 
-        compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
-        content  = compiler.compile(name)
-        content.delete('template')
-        client   = Eson::HTTP::Client.new(:server => args[:server])
-
-        log_info "Creating index #{args[:index]} with template '#{name}' at '#{args[:server]}'"
-        client.create_index content.merge(index: args[:index])
+        esclient_with_template(name, args[:server]) do |client, content|
+          log_info "Creating index #{args[:index]} with template '#{name}' at '#{args[:server]}'"
+          client.create_index content.merge(index: args[:index])
+        end
       end
 
       desc "Deletes the #{name} template and recreates it"
       task :reset, :server, :template do |t, args|
         args.with_defaults(:server => @es_server, :template => name)
 
-        compiler = Elasticsearch::Template::Compiler.new TEMPLATES_PATH
-        content  = compiler.compile(name)
-        client   = Eson::HTTP::Client.new(:server => args[:server])
-
-        log_info "Resetting template '#{name}' as '#{args[:template]}' to '#{args[:server]}'"
-        client.delete_template(name: args[:template])
-        client.put_template content.merge(name: args[:template])
+        esclient_with_template(name, args[:server]) do |client, content|
+          log_info "Resetting template '#{name}' as '#{args[:template]}' to '#{args[:server]}'"
+          client.delete_template(name: args[:template])
+          client.put_template content.merge(name: args[:template])
+        end
       end
 
       desc "Sets an alias to a specific index"
