@@ -121,6 +121,7 @@ namespace :es do
         args.with_defaults(:server => @es_server)
 
         esclient_with_template(name, args[:server]) do |client, content|
+          content.delete('template')
           log_info "Creating index #{args[:index]} with template '#{name}' at '#{args[:server]}'"
           client.create_index content.merge(index: args[:index])
         end
