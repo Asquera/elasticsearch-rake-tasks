@@ -5,7 +5,7 @@ require "eson-http"
 # to set a custom logger
 # Elasticsearch::Logging.logger = MyLogger.new
 
-BASE_PATH      = "resources/elasticsearch/"
+BASE_PATH      = "resources/elasticsearch/" unless defined?(BASE_PATH)
 TEMPLATES_PATH = "#{BASE_PATH}templates/"
 SEED_PATH      = "#{BASE_PATH}dumps/"
 
