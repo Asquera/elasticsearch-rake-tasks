@@ -139,14 +139,14 @@ namespace :es do
       end
 
       desc "Sets an alias to a specific index"
-      task :alias, :server, :index do |t, args|
-        args.with_defaults(:server => @es_server)
+      task :alias, :server, :index, :alias do |t, args|
+        args.with_defaults(:server => @es_server, :alias => name)
 
         require "eson-more"
 
         client = Eson::HTTP::Client.new(:server => args[:server])
         log_info "Setting alias '#{name}' to index '#{args[:index]}' at '#{args[:server]}'"
-        update_alias(client, name, args[:index])
+        update_alias(client, args[:alias], args[:index])
       end
 
       desc "Updates the index to a new version with template #{name}"
