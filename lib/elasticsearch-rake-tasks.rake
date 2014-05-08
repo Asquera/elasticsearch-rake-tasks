@@ -150,8 +150,8 @@ namespace :es do
       end
 
       desc "Updates the index to a new version with template #{name}"
-      task :flip, :server, :old_index, :new_index do |t,args|
-        args.with_defaults(:server => @es_server)
+      task :flip, :server, :old_index, :new_index, :alias do |t,args|
+        args.with_defaults(:server => @es_server, :alias => nil)
 
         server    = args[:server]
         old_index = args[:old_index]
