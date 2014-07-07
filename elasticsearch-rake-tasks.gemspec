@@ -6,10 +6,10 @@ require 'elasticsearch/rake/tasks/version'
 Gem::Specification.new do |spec|
   spec.name          = "elasticsearch-rake-tasks"
   spec.version       = Elasticsearch::Rake::Tasks::VERSION
-  spec.authors       = ["TODO: Write your name"]
-  spec.email         = ["TODO: Write your email address"]
-  spec.description   = %q{TODO: Write a gem description}
-  spec.summary       = %q{TODO: Write a gem summary}
+  spec.authors       = ["Florian Gilcher"]
+  spec.email         = ["florian.gilcher@asquera.de"]
+  spec.description   = %q{A set of rake tasks to interact with Elasticsearch: generate mappings, push them, update them.}
+  spec.summary       = %q{rake tasks for Elasticsearch}
   spec.homepage      = ""
   spec.license       = "MIT"
 
