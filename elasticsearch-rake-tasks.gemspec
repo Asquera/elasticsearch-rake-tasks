@@ -18,9 +18,10 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "faraday"
-  spec.add_dependency "eson"
-  spec.add_dependency "eson-more"
+  spec.add_dependency "net-http-persistent", '~> 2.9.4'
+  spec.add_dependency "faraday", '~> 0.8.11'
+  spec.add_dependency "eson", '~> 0.8'
+  spec.add_dependency "eson-more", '~> 0.8'
   spec.add_dependency "activesupport", '~> 3.2.0'
   spec.add_dependency "psych-inherit-file", '~> 1.0'
 
